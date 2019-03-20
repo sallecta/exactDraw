@@ -1,0 +1,15 @@
+git status
+git add .gitignore
+git add gui_resourceless/
+git add *
+git commit
+git push
+git reset HEAD **/lib
+git clone https://github.com/sallecta/laz_code_samples.git
+git pull laz_code_samples master
+git fetch laz_code_samples
+git remote add laz_code_samples https://github.com/sallecta/laz_code_samples.git
+git remote -v
+git init
+git config --list
+
