@@ -1,0 +1,131 @@
+object Form1: TForm1
+  Left = 540
+  Height = 486
+  Top = 161
+  Width = 724
+  Caption = 'Form1'
+  ClientHeight = 486
+  ClientWidth = 724
+  LCLVersion = '2.0.0.4'
+  object Pnl_1: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Panel1
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = VScr_Area
+    Left = 0
+    Height = 48
+    Top = 24
+    Width = 724
+    Alignment = taRightJustify
+    Anchors = [akTop, akLeft, akRight]
+    BevelColor = clRed
+    BevelOuter = bvSpace
+    Caption = 'Pnl_1'
+    ClientHeight = 48
+    ClientWidth = 724
+    Color = 64511
+    ParentColor = False
+    TabOrder = 1
+    OnClick = Pnl_1Click
+    object SpinEd_1: TSpinEdit
+      AnchorSideLeft.Control = Pnl_1
+      AnchorSideTop.Control = Pnl_1
+      AnchorSideBottom.Control = Pnl_1
+      AnchorSideBottom.Side = asrBottom
+      Left = 9
+      Height = 30
+      Top = 9
+      Width = 48
+      Anchors = [akTop, akLeft, akBottom]
+      BorderSpacing.Left = 8
+      BorderSpacing.Top = 8
+      BorderSpacing.Right = 8
+      BorderSpacing.Bottom = 8
+      TabOrder = 0
+    end
+    object ChBox_pixCentered: TCheckBox
+      AnchorSideLeft.Control = SpinEd_1
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = Pnl_1
+      AnchorSideTop.Side = asrCenter
+      AnchorSideBottom.Side = asrBottom
+      Left = 65
+      Height = 23
+      Top = 13
+      Width = 175
+      BorderSpacing.Left = 8
+      BorderSpacing.Top = 8
+      BorderSpacing.Bottom = 8
+      Caption = 'Pixel-centered coordinates'
+      TabOrder = 1
+    end
+    object ChBx_Antialias: TCheckBox
+      AnchorSideLeft.Control = Btn_toDataURL
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = Pnl_1
+      AnchorSideTop.Side = asrCenter
+      AnchorSideBottom.Side = asrBottom
+      Left = 330
+      Height = 23
+      Top = 13
+      Width = 91
+      BorderSpacing.Left = 8
+      BorderSpacing.Top = 8
+      BorderSpacing.Bottom = 8
+      Caption = 'Antialiasing'
+      TabOrder = 2
+    end
+    object Btn_toDataURL: TButton
+      AnchorSideLeft.Control = ChBox_pixCentered
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = Pnl_1
+      AnchorSideTop.Side = asrCenter
+      AnchorSideBottom.Side = asrBottom
+      Left = 248
+      Height = 31
+      Top = 9
+      Width = 74
+      AutoSize = True
+      BorderSpacing.Left = 8
+      BorderSpacing.Top = 8
+      BorderSpacing.Bottom = 8
+      Caption = 'toDataURL'
+      TabOrder = 3
+    end
+  end
+  object VScr_Area: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Pnl_1
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 414
+    Top = 72
+    Width = 724
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    AutoSize = True
+    BevelColor = 65357
+    BevelOuter = bvSpace
+    BevelWidth = 5
+    Caption = 'VScr_Area'
+    TabOrder = 2
+  end
+  object Panel1: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 0
+    Height = 24
+    Top = 0
+    Width = 724
+    Anchors = [akTop, akLeft, akRight]
+    Caption = 'Panel1'
+    TabOrder = 0
+  end
+end

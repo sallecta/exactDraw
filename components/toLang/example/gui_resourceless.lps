@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="11"/>
+    <BuildModes Active="Default"/>
+    <Units Count="7">
+      <Unit0>
+        <Filename Value="gui_resourceless.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <TopLine Value="16"/>
+        <CursorPos X="19" Y="36"/>
+        <UsageCount Value="38"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="form_main.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="form_Main"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="4"/>
+        <CursorPos X="16" Y="8"/>
+        <UsageCount Value="38"/>
+        <Loaded Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="gvars.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="2"/>
+        <CursorPos X="5" Y="7"/>
+        <UsageCount Value="32"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="../toLang.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="4"/>
+        <CursorPos X="12"/>
+        <UsageCount Value="24"/>
+        <Loaded Value="True"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="../toLang_main.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="130"/>
+        <CursorPos X="22" Y="142"/>
+        <UsageCount Value="33"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="toLang/toLang.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="20"/>
+        <CursorPos X="18" Y="20"/>
+        <UsageCount Value="19"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="../toLang_defaults.pas"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="3"/>
+        <CursorPos X="73" Y="13"/>
+        <UsageCount Value="26"/>
+        <Loaded Value="True"/>
+      </Unit6>
+    </Units>
+    <JumpHistory Count="12" HistoryIndex="11">
+      <Position1>
+        <Filename Value="../toLang_defaults.pas"/>
+        <Caret Line="15" Column="4"/>
+      </Position1>
+      <Position2>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="28" Column="26" TopLine="22"/>
+      </Position2>
+      <Position3>
+        <Filename Value="gvars.pas"/>
+        <Caret Line="13"/>
+      </Position3>
+      <Position4>
+        <Filename Value="gvars.pas"/>
+        <Caret Line="16" Column="23"/>
+      </Position4>
+      <Position5>
+        <Filename Value="gvars.pas"/>
+        <Caret Line="15" Column="19"/>
+      </Position5>
+      <Position6>
+        <Filename Value="gui_resourceless.lpr"/>
+        <Caret Line="26" Column="36" TopLine="7"/>
+      </Position6>
+      <Position7>
+        <Filename Value="gvars.pas"/>
+        <Caret Line="11" Column="7" TopLine="2"/>
+      </Position7>
+      <Position8>
+        <Filename Value="gui_resourceless.lpr"/>
+        <Caret Line="24" Column="28" TopLine="14"/>
+      </Position8>
+      <Position9>
+        <Filename Value="gvars.pas"/>
+        <Caret Line="9" Column="9"/>
+      </Position9>
+      <Position10>
+        <Filename Value="../toLang_defaults.pas"/>
+        <Caret Line="11" Column="12"/>
+      </Position10>
+      <Position11>
+        <Filename Value="gvars.pas"/>
+        <Caret Line="7" Column="5"/>
+      </Position11>
+      <Position12>
+        <Filename Value="../toLang_defaults.pas"/>
+        <Caret Line="13" Column="73"/>
+      </Position12>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes Count="0" ActiveMode="default"/>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>

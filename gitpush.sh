@@ -5,10 +5,10 @@ git add **/.gitignore
 git add .gitignore
 git status
 echo Check status [Enter to continue, Ctrl+C to cancel]:
-read unusedvar
-
-echo Enter commit message:
+echo - 'write' commit message or just press Enter to upload;
+echo - 'type' Ctrl+C to cancel
 read commmitMessage
+
 if [ "$commmitMessage" = "" ]
 then
     commmitMessage='...'
