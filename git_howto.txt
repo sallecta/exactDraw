@@ -1,0 +1,1 @@
+/media/data/development/lazarus/lazarus_git_projects/githelper/help_txt/git_howto.txt

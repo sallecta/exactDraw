@@ -20,7 +20,7 @@ var
   msg: TtoLang;
   appname: string;
   form1: Tform_1;
-  wine:boolean;
+  wine,spinEdLoop:boolean;
 
 implementation
 
@@ -36,5 +36,6 @@ initialization
 {$ELSE}
   wine:=False;
 {$ENDIF}
+spinEdLoop:=False;
 
 end.

@@ -51,7 +51,7 @@
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="empty"/>
+      <Filename Value="application/$NameOnly($(ProjFile)).$(SrcOS).$(TargetCPU)"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>

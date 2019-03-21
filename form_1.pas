@@ -135,8 +135,8 @@ begin
   SpinEd_1.BorderSpacing.Top := 8;
   SpinEd_1.BorderSpacing.Right := 8;
   SpinEd_1.BorderSpacing.Bottom := 8;
-  SpinEd_1.MaxValue := 23;
-  SpinEd_1.MinValue := 1;
+  SpinEd_1.MaxValue := 23+1;
+  SpinEd_1.MinValue := 0;
   SpinEd_1.TabOrder := 0;
   SpinEd_1.Value := 1;
   if gvars.wine then SpinEd_1.Font.Size:=14;
@@ -288,6 +288,17 @@ end;
 
 procedure Tform_1.SpinEd_1Change(Sender: TObject);
 begin
+  //spin rdit loop from min value + increment to max value - increment
+  if gvars.form1.SpinEd_1.Value =  gvars.form1.SpinEd_1.MaxValue then begin
+    gvars.form1.SpinEd_1.Value:=
+    gvars.form1.SpinEd_1.MinValue+gvars.form1.SpinEd_1.Increment;
+    exit;
+  end;
+  if gvars.form1.SpinEd_1.Value =  gvars.form1.SpinEd_1.MinValue then begin
+    gvars.form1.SpinEd_1.Value:=
+    gvars.form1.SpinEd_1.MaxValue-gvars.form1.SpinEd_1.Increment;
+    exit;
+  end;
   VirtScreen.DiscardBitmap;
 end;
 
