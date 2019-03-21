@@ -16,6 +16,7 @@ type
     Btn_toDataURL: TButton;
     ChBox_pixCentered: TCheckBox;
     ChBx_Antialias: TCheckBox;
+    Memo_dbg: TMemo;
     Panel1: TPanel;
     Pnl_1: TPanel;
     SpinEd_1: TSpinEdit;

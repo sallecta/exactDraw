@@ -8,7 +8,7 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, bgracontrols, bgrabitmappack,SysUtils,
-  form_1, gvars;
+  form_1, gvars, toLang_defaults;
 
 //{$R *.res}
 

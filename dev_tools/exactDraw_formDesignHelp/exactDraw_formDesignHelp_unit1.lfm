@@ -1,11 +1,11 @@
 object Form1: TForm1
-  Left = 540
-  Height = 486
-  Top = 161
-  Width = 724
+  Left = 527
+  Height = 600
+  Top = 6
+  Width = 720
   Caption = 'Form1'
-  ClientHeight = 486
-  ClientWidth = 724
+  ClientHeight = 600
+  ClientWidth = 720
   LCLVersion = '2.0.0.4'
   object Pnl_1: TPanel
     AnchorSideLeft.Control = Owner
@@ -17,14 +17,14 @@ object Form1: TForm1
     Left = 0
     Height = 48
     Top = 24
-    Width = 724
+    Width = 720
     Alignment = taRightJustify
     Anchors = [akTop, akLeft, akRight]
     BevelColor = clRed
     BevelOuter = bvSpace
     Caption = 'Pnl_1'
     ClientHeight = 48
-    ClientWidth = 724
+    ClientWidth = 720
     Color = 64511
     ParentColor = False
     TabOrder = 1
@@ -104,12 +104,11 @@ object Form1: TForm1
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = Memo_dbg
     Left = 0
-    Height = 414
+    Height = 451
     Top = 72
-    Width = 724
+    Width = 720
     Anchors = [akTop, akLeft, akRight, akBottom]
     AutoSize = True
     BevelColor = 65357
@@ -126,9 +125,29 @@ object Form1: TForm1
     Left = 0
     Height = 24
     Top = 0
-    Width = 724
+    Width = 720
     Anchors = [akTop, akLeft, akRight]
     Caption = 'Panel1'
     TabOrder = 0
+  end
+  object Memo_dbg: TMemo
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = VScr_Area
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 77
+    Top = 523
+    Width = 720
+    Anchors = [akLeft, akRight, akBottom]
+    Color = clWhite
+    Lines.Strings = (
+      'Memo1'
+    )
+    ScrollBars = ssBoth
+    TabOrder = 3
   end
 end
