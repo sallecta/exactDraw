@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Spin,
   ExtCtrls, StdCtrls, BGRAVirtualScreen, BGRABitmap, BGRABitmapTypes,
-  BGRACanvas2D;
+  BGRACanvas2d;
 
 const
   timeGrain = 15 / 1000 / 60 / 60 / 24;
@@ -16,7 +16,7 @@ type
 
   { TForm1 }
 
-  Tform_1 = class(TForm)
+  TForm1 = class(TForm)
     constructor Create({!}AOwner: TComponent); override;
   var //fields can't appear after method, let's use vars instead
     Btn_toDataURL: TButton;
@@ -24,7 +24,7 @@ type
     ChBox_pixCentered: TCheckBox;
     Pnl_1: TPanel;
     DlgSave_1: TSaveDialog;
-    SpinEd_1: TSpinEdit;
+    SpinEd1: TSpinEdit;
     VirtScreen: TBGRAVirtualScreen;
     Memo_dbg: TMemo;
     Tmr_1: TTimer;
@@ -34,11 +34,8 @@ type
     procedure ChBox_pixCenteredChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure FormMouseLeave(Sender: TObject);
-    procedure FormMouseMove(Sender: TObject; {%H-}Shift: TShiftState;
-    {%H-}X, {%H-}Y: integer);
     //procedure FormPaint(Sender: TObject);
-    procedure SpinEd_1Change(Sender: TObject);
+    procedure SpinEd1_onChange(Sender: TObject);
     procedure Tmr_1Timer(Sender: TObject);
     procedure VirtScreenMouseLeave(Sender: TObject);
     procedure VirtScreenMouseMove(Sender: TObject; {%H-}Shift: TShiftState;
@@ -46,6 +43,8 @@ type
     procedure VirtScreenRedraw(Sender: TObject; Bitmap: TBGRABitmap);
   private
     { private declarations }
+    CurPoint: integer;
+    B1, B2: TRationalQuadraticBezierCurve;
     mx, my: integer;
     lastTime: TDateTime;
     timeGrainAcc: double;
@@ -53,65 +52,87 @@ type
     test19pos, test23pos: integer;
     img, abelias: TBGRABitmap;
     procedure UpdateIn(ms: integer);
-    procedure UseVectorizedFont(drawingArea: TBGRACanvas2D; AUse: boolean);
+    procedure UseVectorizedFont(targetCanvas: TBGRACanvas2D; AUse: boolean);
+    {Form Events}
+    procedure VirtScreen_OnMouseDown(Sender: TObject; mouseBtn: TMouseButton;
+      Shift: TShiftState; X, Y: integer);
+    procedure VirtScreen_OnMouseUp(Sender: TObject; mouseBtn: TMouseButton;
+      Shift: TShiftState; X, Y: integer);
+    {end Form Events}
   public
     { public declarations }
-    procedure Test1(drawingArea: TBGRACanvas2D);
-    procedure Test2(drawingArea: TBGRACanvas2D);
-    procedure Test3(drawingArea: TBGRACanvas2D);
-    procedure Test4(drawingArea: TBGRACanvas2D; grainElapse: integer);
-    procedure Test5(drawingArea: TBGRACanvas2D; grainElapse: integer);
-    procedure Test6(drawingArea: TBGRACanvas2D);
-    procedure Test7(drawingArea: TBGRACanvas2D);
-    procedure Test8(drawingArea: TBGRACanvas2D);
-    procedure Test9(drawingArea: TBGRACanvas2D);
-    procedure Test10(drawingArea: TBGRACanvas2D);
-    procedure Test11(drawingArea: TBGRACanvas2D);
-    procedure Test12(drawingArea: TBGRACanvas2D);
-    procedure Test13(drawingArea: TBGRACanvas2D);
-    procedure Test14(drawingArea: TBGRACanvas2D);
-    procedure Test15(drawingArea: TBGRACanvas2D);
-    procedure Test16(drawingArea: TBGRACanvas2D; grainElapse: integer);
-    procedure Test17(drawingArea: TBGRACanvas2D; grainElapse: integer);
-    procedure Test18(drawingArea: TBGRACanvas2D; grainElapse: integer);
-    procedure Test19(drawingArea: TBGRACanvas2D; grainElapse: integer);
-    procedure Test20(drawingArea: TBGRACanvas2D; AVectorizedFont: boolean);
-    procedure Test22(drawingArea: TBGRACanvas2D);
-    procedure Test23(drawingArea: TBGRACanvas2D; grainElapse: integer);
-    procedure Test24(drawingArea: TBGRACanvas2D);
+    procedure Test1(targetCanvas: TBGRACanvas2D);
+    procedure Test2(targetCanvas: TBGRACanvas2D);
+    procedure Test3(targetCanvas: TBGRACanvas2D);
+    procedure Test4(targetCanvas: TBGRACanvas2D; grainElapse: integer);
+    procedure Test5(targetCanvas: TBGRACanvas2D; grainElapse: integer);
+    procedure Test6(targetCanvas: TBGRACanvas2D);
+    procedure Test7(targetCanvas: TBGRACanvas2D);
+    procedure Test8(targetCanvas: TBGRACanvas2D);
+    procedure Test9(targetCanvas: TBGRACanvas2D);
+    procedure Test10(targetCanvas: TBGRACanvas2D);
+    procedure Test11(targetCanvas: TBGRACanvas2D);
+    procedure Test12(targetCanvas: TBGRACanvas2D);
+    procedure Test13(targetCanvas: TBGRACanvas2D);
+    procedure Test14(targetCanvas: TBGRACanvas2D);
+    procedure Test15(targetCanvas: TBGRACanvas2D);
+    procedure Test16(targetCanvas: TBGRACanvas2D; grainElapse: integer);
+    procedure Test17(targetCanvas: TBGRACanvas2D; grainElapse: integer);
+    procedure Test18(targetCanvas: TBGRACanvas2D; grainElapse: integer);
+    procedure Test19(targetCanvas: TBGRACanvas2D; grainElapse: integer);
+    procedure Test20(targetCanvas: TBGRACanvas2D; AVectorizedFont: boolean);
+    procedure Test22(targetCanvas: TBGRACanvas2D);
+    procedure Test23(targetCanvas: TBGRACanvas2D; grainElapse: integer);
+    procedure Test24(targetCanvas: TBGRACanvas2D);
   end;
+
+var
+
+  {test24 vars srart (rationalbezier)}
+  counter1:integer=1;
+  mouseBtnCurrent: string[7]='';
+  R, bounds: TrectF;
+  Aleft, Aright: TRationalQuadraticBezierCurve;
+  precision: single;
+  weight: single;
+  CenterOfDrawing: TPoint;
+  minimalDistance: single;
+  relX, relY: integer;
+  PrevMousePos: TPoint;
+  d: TPointF;
+  beziersDefined: boolean = False;
+  ControlCircleRadius: integer = 5;
+  ControlDetected: string[10] = '';
+{end test 24 vars (rationalbezier)}
 
 implementation
 
 uses BGRAGradientScanner, Math, BGRASVG, BGRAVectorize,
-  gvars;
+  glob;
 
 //{$R form_1.lfm}
 
 { TForm1 }
 {resourceless form}
-constructor Tform_1.Create(AOwner: TComponent);
+constructor TForm1.Create(AOwner: TComponent);
 begin
 
   {!}inherited CreateNew(AOwner, 1);{!}
-  Caption := gvars.appname;
+  Caption := glob.appname;
   Left := 567;
   Top := 83;
   Width := 720;
   Height := 600;
   ClientWidth := Width;
   ClientHeight := Height;
-
-  //OnCreate := @FormCreate;
   OnDestroy := @FormDestroy;
-  OnMouseLeave := @FormMouseLeave;
-  OnMouseMove := @FormMouseMove;
-  //OnPaint := @FormPaint;
-  img := TBGRABitmap.Create(gvars.path_media_s + 'pteRaz.jpg');
-  abelias := TBGRABitmap.Create(gvars.path_media_s + 'abelias.png');
+  img := TBGRABitmap.Create(glob.path_media_s + 'pteRaz.jpg');
+  abelias := TBGRABitmap.Create(glob.path_media_s + 'abelias.png');
   mx := -1000;
   my := -1000;
   lastTime := Now;
+  CurPoint := -1;
+
   {Form Controls}
   Pnl_1 := TPanel.Create(Self);
   Pnl_1.AutoSize := False;
@@ -119,39 +140,34 @@ begin
   Pnl_1.Left := 0;
   Pnl_1.Top := 0;
   Pnl_1.Align := alTop;
-  //Pnl_1.Color := $0000FBFF;
-  //Pnl_1.BevelColor := clRed;
-  //Pnl_1.BevelInner := bvNone;
-  //Pnl_1.BevelOuter := bvSpace;
-  //Pnl_1.BevelWidth := 1;
   Pnl_1.TabOrder := 1;
-  Pnl_1.Parent := self;  //self is instance of tform_1
+  Pnl_1.Parent := self;  //self is instance of TForm1
 
-  SpinEd_1 := TSpinEdit.Create(Pnl_1);
-  SpinEd_1.AutoSize := True;
-  SpinEd_1.AnchorSideLeft.Control := Pnl_1;
-  SpinEd_1.AnchorSideTop.Control := Pnl_1;
-  SpinEd_1.AnchorSideBottom.Control := Pnl_1;
-  SpinEd_1.AnchorSideBottom.Side := asrBottom;
-  SpinEd_1.Anchors := [akTop, akLeft, akBottom];
-  SpinEd_1.BorderSpacing.Left := 8;
-  SpinEd_1.BorderSpacing.Top := 8;
-  SpinEd_1.BorderSpacing.Right := 8;
-  SpinEd_1.BorderSpacing.Bottom := 8;
-  SpinEd_1.Increment := 1;
-  SpinEd_1.MaxValue := 24 + SpinEd_1.Increment;//provides loop to beginning
-  SpinEd_1.MinValue := 1 - SpinEd_1.Increment;//provides loop to end
-  SpinEd_1.TabOrder := 0;
-  SpinEd_1.Value := 1;
-  if gvars.wine then
-    SpinEd_1.Font.Size := 14;
-  SpinEd_1.AutoSelect := False;
-  SpinEd_1.OnChange := @SpinEd_1Change;
-  SpinEd_1.Parent := Pnl_1;
+  SpinEd1 := TSpinEdit.Create(Pnl_1);
+  SpinEd1.AutoSize := True;
+  SpinEd1.AnchorSideLeft.Control := Pnl_1;
+  SpinEd1.AnchorSideTop.Control := Pnl_1;
+  SpinEd1.AnchorSideBottom.Control := Pnl_1;
+  SpinEd1.AnchorSideBottom.Side := asrBottom;
+  SpinEd1.Anchors := [akTop, akLeft, akBottom];
+  SpinEd1.BorderSpacing.Left := 8;
+  SpinEd1.BorderSpacing.Top := 8;
+  SpinEd1.BorderSpacing.Right := 8;
+  SpinEd1.BorderSpacing.Bottom := 8;
+  SpinEd1.Increment := 1;
+  SpinEd1.MaxValue := 24 + SpinEd1.Increment;//provides loop to beginning
+  SpinEd1.MinValue := 1 - SpinEd1.Increment;//provides loop to end
+  SpinEd1.TabOrder := 0;
+  SpinEd1.Value := 24;
+  if glob.wine then
+    SpinEd1.Font.Size := 14;
+  SpinEd1.AutoSelect := False;
+  SpinEd1.OnChange := @SpinEd1_onChange;
+  SpinEd1.Parent := Pnl_1;
 
   ChBox_pixCentered := TCheckBox.Create(Pnl_1);
   ChBox_pixCentered.AutoSize := True;
-  ChBox_pixCentered.AnchorSideLeft.Control := SpinEd_1;
+  ChBox_pixCentered.AnchorSideLeft.Control := SpinEd1;
   ChBox_pixCentered.AnchorSideLeft.Side := asrBottom;
   ChBox_pixCentered.AnchorSideTop.Control := Pnl_1;
   ChBox_pixCentered.AnchorSideTop.Side := asrCenter;
@@ -161,7 +177,7 @@ begin
   ChBox_pixCentered.BorderSpacing.Left := 8;
   ChBox_pixCentered.BorderSpacing.Top := 8;
   ChBox_pixCentered.BorderSpacing.Bottom := 8;
-  ChBox_pixCentered.Caption := gvars.msg.Get('PixCentCoord');
+  ChBox_pixCentered.Caption := glob.msg.Get('PixCentCoord');
   ChBox_pixCentered.Font.Height := -12;
   ChBox_pixCentered.ParentFont := False;
   ChBox_pixCentered.OnChange := @ChBox_pixCenteredChange;
@@ -180,7 +196,7 @@ begin
   Btn_toDataURL.BorderSpacing.Left := 8;
   Btn_toDataURL.BorderSpacing.Top := 8;
   Btn_toDataURL.BorderSpacing.Bottom := 8;
-  Btn_toDataURL.Caption := gvars.msg.Get('toDataURL');
+  Btn_toDataURL.Caption := glob.msg.Get('toDataURL');
   Btn_toDataURL.OnClick := @Btn_toDataURLClick;
   Btn_toDataURL.TabOrder := 2;
   Btn_toDataURL.Parent := Pnl_1;
@@ -197,43 +213,43 @@ begin
   ChBx_Antialias.BorderSpacing.Left := 8;
   ChBx_Antialias.BorderSpacing.Top := 8;
   ChBx_Antialias.BorderSpacing.Bottom := 8;
-  ChBx_Antialias.Caption := gvars.msg.Get('antialias');
+  ChBx_Antialias.Caption := glob.msg.Get('antialias');
   ChBx_Antialias.Checked := True;
   ChBx_Antialias.OnChange := @ChBx_AntialiasChange;
   ChBx_Antialias.State := cbChecked;
   ChBx_Antialias.TabOrder := 3;
   ChBx_Antialias.Parent := Pnl_1;
 
-  Tmr_1 := TTimer.Create(self);//self is instance of tform_1           ;
+  Tmr_1 := TTimer.Create(self);//self is instance of TForm1           ;
   Tmr_1.OnTimer := @Tmr_1Timer;
 
-  DlgSave_1 := TSaveDialog.Create(self);//self is instance of tform_1        ;
-  DlgSave_1.Title := gvars.msg.Get('saveAsHtm');
+  DlgSave_1 := TSaveDialog.Create(self);//self is instance of TForm1        ;
+  DlgSave_1.Title := glob.msg.Get('saveAsHtm');
   DlgSave_1.DefaultExt := '.html';
-  DlgSave_1.Filter := gvars.msg.Get('HtmFile');
+  DlgSave_1.Filter := glob.msg.Get('HtmFile');
 
   Memo_dbg := TMemo.Create(self);
-  Memo_dbg.AnchorSideLeft.Control := self;  //self is instance of tform_1
+  Memo_dbg.AnchorSideLeft.Control := self;  //self is instance of TForm1
   Memo_dbg.AnchorSideTop.Control := VirtScreen;
   Memo_dbg.AnchorSideTop.Side := asrBottom;
-  Memo_dbg.AnchorSideRight.Control := self;  //self is instance of tform_1
+  Memo_dbg.AnchorSideRight.Control := self;  //self is instance of TForm1
   Memo_dbg.AnchorSideRight.Side := asrBottom;
-  Memo_dbg.AnchorSideBottom.Control := self;  //self is instance of tform_1
+  Memo_dbg.AnchorSideBottom.Control := self;  //self is instance of TForm1
   Memo_dbg.AnchorSideBottom.Side := asrBottom;
   Memo_dbg.Anchors := [akLeft, akRight, akBottom];
-  Memo_dbg.Lines.Add(gvars.msg.Get('Memo_dbg_caption'));
+  Memo_dbg.Lines.Add(glob.msg.Get('Memo_dbg_caption'));
   Memo_dbg.Height := 80;
   Memo_dbg.ScrollBars := ssBoth;
-  Memo_dbg.Parent := self;  //self is instance of tform_1
+  Memo_dbg.Parent := self;  //self is instance of TForm1
 
   VirtScreen := TBGRAVirtualScreen.Create(Self);
   VirtScreen.AutoSize := True;
-  VirtScreen.AnchorSideLeft.Control := self;//self is instance of tform_1
+  VirtScreen.AnchorSideLeft.Control := self;//self is instance of TForm1
   VirtScreen.AnchorSideTop.Control := Pnl_1;
   VirtScreen.AnchorSideTop.Side := asrBottom;
-  VirtScreen.AnchorSideRight.Control := self;//self is instance of tform_1
+  VirtScreen.AnchorSideRight.Control := self;//self is instance of TForm1
   VirtScreen.AnchorSideRight.Side := asrBottom;
-  VirtScreen.AnchorSideBottom.Control := Memo_dbg;//self is instance of tform_1
+  VirtScreen.AnchorSideBottom.Control := Memo_dbg;//self is instance of TForm1
   VirtScreen.AnchorSideBottom.Side := asrTop;
   VirtScreen.Anchors := [akTop, akLeft, akRight, akBottom];
   VirtScreen.ParentColor := False;
@@ -241,28 +257,34 @@ begin
   VirtScreen.OnRedraw := @VirtScreenRedraw;
   VirtScreen.OnMouseLeave := @VirtScreenMouseLeave;
   VirtScreen.OnMouseMove := @VirtScreenMouseMove;
-  VirtScreen.Parent := self;  //self is instance of tform_1
+  VirtScreen.OnMouseDown := @VirtScreen_OnMouseDown;
+  VirtScreen.OnMouseUp := @VirtScreen_OnMouseUp;
+  VirtScreen.Parent := self;  //self is instance of TForm1
 
 end;
 
 {end resourceless form}
 
+{Form Events}
 
-procedure Tform_1.FormCreate(Sender: TObject);
+{end Form Events}
+
+
+procedure TForm1.FormCreate(Sender: TObject);
 begin
-  img := TBGRABitmap.Create(gvars.path_media_s + 'pteRaz.jpg');
-  abelias := TBGRABitmap.Create(gvars.path_media_s + 'abelias.png');
+  img := TBGRABitmap.Create(glob.path_media_s + 'pteRaz.jpg');
+  abelias := TBGRABitmap.Create(glob.path_media_s + 'abelias.png');
   mx := -1000;
   my := -1000;
   lastTime := Now;
 end;
 
-procedure Tform_1.ChBox_pixCenteredChange(Sender: TObject);
+procedure TForm1.ChBox_pixCenteredChange(Sender: TObject);
 begin
   VirtScreen.DiscardBitmap;
 end;
 
-procedure Tform_1.Btn_toDataURLClick(Sender: TObject);
+procedure TForm1.Btn_toDataURLClick(Sender: TObject);
 var
   html: string;
   t: textfile;
@@ -276,79 +298,79 @@ begin
     rewrite(t);
     Write(t, html);
     closefile(t);
-    MessageDlg(gvars.msg.Get('DlgSave_toDataURL'), gvars.msg.Get('DlgSave_Out') +
+    MessageDlg(glob.msg.Get('DlgSave_toDataURL'), glob.msg.Get('DlgSave_Out') +
       DlgSave_1.FileName, mtInformation, [mbOK], 0);
   end;
 end;
 
-procedure Tform_1.ChBx_AntialiasChange(Sender: TObject);
+procedure TForm1.ChBx_AntialiasChange(Sender: TObject);
 begin
   VirtScreen.DiscardBitmap;
 end;
 
-procedure Tform_1.FormDestroy(Sender: TObject);
+procedure TForm1.FormDestroy(Sender: TObject);
 begin
   img.Free;
   abelias.Free;
 end;
 
-procedure Tform_1.FormMouseLeave(Sender: TObject);
-begin
 
-end;
 
-procedure Tform_1.FormMouseMove(Sender: TObject; Shift: TShiftState; X, Y: integer);
-begin
-
-end;
-
-procedure Tform_1.SpinEd_1Change(Sender: TObject);
+procedure TForm1.SpinEd1_onChange(Sender: TObject);
 begin
   //spin edit loop from min value + increment to max value - increment
-  if gvars.form1.SpinEd_1.Value = gvars.form1.SpinEd_1.MaxValue then
-    gvars.form1.SpinEd_1.Value :=
-      gvars.form1.SpinEd_1.MinValue + gvars.form1.SpinEd_1.Increment
-  else if gvars.form1.SpinEd_1.Value = gvars.form1.SpinEd_1.MinValue then
-    gvars.form1.SpinEd_1.Value :=
-      gvars.form1.SpinEd_1.MaxValue - gvars.form1.SpinEd_1.Increment
+  if glob.Form1.SpinEd1.Value = glob.Form1.SpinEd1.MaxValue then
+    glob.Form1.SpinEd1.Value :=
+      glob.Form1.SpinEd1.MinValue + glob.Form1.SpinEd1.Increment
+  else if glob.Form1.SpinEd1.Value = glob.Form1.SpinEd1.MinValue then
+    glob.Form1.SpinEd1.Value :=
+      glob.Form1.SpinEd1.MaxValue - glob.Form1.SpinEd1.Increment
   else
-  begin
     VirtScreen.DiscardBitmap;
-    //sroll down
-    self.Memo_dbg.VertScrollBar.Position :=
-      self.Memo_dbg.Lines.Capacity * self.Memo_dbg.VertScrollBar.Page;
-    if self.Memo_dbg.Lines.Capacity = (gvars.form1.SpinEd_1.MaxValue-1) then
-    begin
-      self.Memo_dbg.Lines.Clear;
-    end;
-    self.Memo_dbg.Lines.Add('test' + IntToStr(SpinEd_1.Value));
-  end;
 end;
 
-procedure Tform_1.Tmr_1Timer(Sender: TObject);
+procedure TForm1.Tmr_1Timer(Sender: TObject);
 begin
   Tmr_1.Enabled := False;
   VirtScreen.DiscardBitmap;
 end;
 
-procedure Tform_1.VirtScreenMouseLeave(Sender: TObject);
+procedure TForm1.VirtScreenMouseLeave(Sender: TObject);
 begin
   mx := -1000;
   my := -1000;
 end;
 
-procedure Tform_1.VirtScreenMouseMove(Sender: TObject; Shift: TShiftState;
+procedure TForm1.VirtScreenMouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: integer);
 begin
   mx := X;
   my := Y;
-  if (SpinEd_1.Value = 1) and not Tmr_1.Enabled then
+  if (SpinEd1.Value = 1) and not Tmr_1.Enabled then
     UpdateIn(10);
 end;
 
-procedure Tform_1.VirtScreenRedraw(Sender: TObject; Bitmap: TBGRABitmap);
+procedure TForm1.VirtScreen_OnMouseDown(Sender: TObject; mouseBtn: TMouseButton;
+  Shift: TShiftState; X, Y: integer);
+begin
+  X:=X;Y:=Y;Shift:=Shift;
+  case mouseBtn of
+    TMouseButton.mbLeft: mouseBtnCurrent := 'left';
+    else
+      mouseBtnCurrent := '';
+  end;
+end;
+
+procedure TForm1.VirtScreen_OnMouseUp(Sender: TObject; mouseBtn: TMouseButton;
+  Shift: TShiftState; X, Y: integer);
+begin
+  X:=X;Y:=Y;Shift:=Shift;mouseBtn:=mouseBtn;
+  mouseBtnCurrent := '';
+end;
+
+procedure TForm1.VirtScreenRedraw(Sender: TObject; Bitmap: TBGRABitmap);
 var
-  drawingArea: TBGRACanvas2D;
+  targetCanvas: TBGRACanvas2D;
   grainElapse: integer;
   newTime: TDateTime;
 begin
@@ -362,356 +384,382 @@ begin
   grainElapse := trunc(timeGrainAcc);
   timeGrainAcc -= grainElapse;
 
-  drawingArea := Bitmap.Canvas2D;
-  drawingArea.antialiasing := ChBx_Antialias.Checked;
-  drawingArea.pixelCenteredCoordinates := ChBox_pixCentered.Checked;
-  drawingArea.save;
+  targetCanvas := Bitmap.Canvas2D;
+  targetCanvas.antialiasing := ChBx_Antialias.Checked;
+  targetCanvas.pixelCenteredCoordinates := ChBox_pixCentered.Checked;
+  targetCanvas.save;
 
-  case SpinEd_1.Value of
-    1: Test1(drawingArea);
-    2: Test2(drawingArea);
-    3: Test3(drawingArea);
-    4: Test4(drawingArea, grainElapse);
-    5: Test5(drawingArea, grainElapse);
-    6: Test6(drawingArea);
-    7: Test7(drawingArea);
-    8: Test8(drawingArea);
-    9: Test9(drawingArea);
-    10: Test10(drawingArea);
-    11: Test11(drawingArea);
-    12: Test12(drawingArea);
-    13: Test13(drawingArea);
-    14: Test14(drawingArea);
-    15: Test15(drawingArea);
-    16: Test16(drawingArea, grainElapse);
-    17: Test17(drawingArea, grainElapse);
-    18: Test18(drawingArea, grainElapse);
-    19: Test19(drawingArea, grainElapse);
-    20: Test20(drawingArea, False);
-    21: Test20(drawingArea, True);
-    22: Test22(drawingArea);
-    23: Test23(drawingArea, grainElapse);
-    24: Test24(drawingArea);
+  case SpinEd1.Value of
+    1: Test1(targetCanvas);
+    2: Test2(targetCanvas);
+    3: Test3(targetCanvas);
+    4: Test4(targetCanvas, grainElapse);
+    5: Test5(targetCanvas, grainElapse);
+    6: Test6(targetCanvas);
+    7: Test7(targetCanvas);
+    8: Test8(targetCanvas);
+    9: Test9(targetCanvas);
+    10: Test10(targetCanvas);
+    11: Test11(targetCanvas);
+    12: Test12(targetCanvas);
+    13: Test13(targetCanvas);
+    14: Test14(targetCanvas);
+    15: Test15(targetCanvas);
+    16: Test16(targetCanvas, grainElapse);
+    17: Test17(targetCanvas, grainElapse);
+    18: Test18(targetCanvas, grainElapse);
+    19: Test19(targetCanvas, grainElapse);
+    20: Test20(targetCanvas, False);
+    21: Test20(targetCanvas, True);
+    22: Test22(targetCanvas);
+    23: Test23(targetCanvas, grainElapse);
+    24: Test24(targetCanvas);
   end;
-  drawingArea.restore;
+  targetCanvas.restore;
 end;
 
-procedure Tform_1.UpdateIn(ms: integer);
+procedure TForm1.UpdateIn(ms: integer);
 begin
   Tmr_1.Interval := ms;
   Tmr_1.Enabled := False;
   Tmr_1.Enabled := True;
 end;
 
-procedure Tform_1.UseVectorizedFont(drawingArea: TBGRACanvas2D; AUse: boolean);
+procedure TForm1.UseVectorizedFont(targetCanvas: TBGRACanvas2D; AUse: boolean);
 begin
-  if AUse and not (drawingArea.fontRenderer is TBGRAVectorizedFontRenderer) then
-    drawingArea.fontRenderer := TBGRAVectorizedFontRenderer.Create;
-  if not AUse and (drawingArea.fontRenderer is TBGRAVectorizedFontRenderer) then
-    drawingArea.fontRenderer := nil;
+  if AUse and not (targetCanvas.fontRenderer is TBGRAVectorizedFontRenderer) then
+    targetCanvas.fontRenderer := TBGRAVectorizedFontRenderer.Create;
+  if not AUse and (targetCanvas.fontRenderer is TBGRAVectorizedFontRenderer) then
+    targetCanvas.fontRenderer := nil;
 end;
 
-procedure Tform_1.Test1(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test1(targetCanvas: TBGRACanvas2D);
 var
   colors: TBGRACustomGradient;
 begin
   if (mx < 0) or (my < 0) then
   begin
-    mx := drawingArea.Width div 2;
-    my := drawingArea.Height div 2;
+    mx := targetCanvas.Width div 2;
+    my := targetCanvas.Height div 2;
   end;
-  drawingArea.fillStyle('rgb(1000,1000,1000)');
+  targetCanvas.fillStyle('rgb(1000,1000,1000)');
   //out of bounds so it is saturated to 255,255,255
-  drawingArea.fillRect(0, 0, drawingArea.Width, drawingArea.Height);
+  targetCanvas.fillRect(0, 0, targetCanvas.Width, targetCanvas.Height);
   colors := TBGRAMultiGradient.Create([BGRA(0, 255, 0), BGRA(0, 192, 128),
     BGRA(0, 255, 0)], [0, 0.5, 1], True, True);
-  drawingArea.fillStyle(drawingArea.createLinearGradient(0, 0, 20, 0, colors));
-  drawingArea.shadowOffset := PointF(5, 5);
-  drawingArea.shadowColor('rgba(0,0,0,0.5)');
-  drawingArea.shadowBlur := 4;
-  drawingArea.fillRect(mx - 100, my - 100, 200, 200);
+  targetCanvas.fillStyle(targetCanvas.createLinearGradient(0, 0, 20, 0, colors));
+  targetCanvas.shadowOffset := PointF(5, 5);
+  targetCanvas.shadowColor('rgba(0,0,0,0.5)');
+  targetCanvas.shadowBlur := 4;
+  targetCanvas.fillRect(mx - 100, my - 100, 200, 200);
   colors.Free;
 end;
 
-procedure Tform_1.Test2(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test2(targetCanvas: TBGRACanvas2D);
 var
   layer: TBGRABitmap;
 begin
-  layer := TBGRABitmap.Create(drawingArea.Width, drawingArea.Height);
+  layer := TBGRABitmap.Create(targetCanvas.Width, targetCanvas.Height);
   with layer.Canvas2D do
   begin
-    pixelCenteredCoordinates := drawingArea.pixelCenteredCoordinates;
-    antialiasing := drawingArea.antialiasing;
+    pixelCenteredCoordinates := targetCanvas.pixelCenteredCoordinates;
+    antialiasing := targetCanvas.antialiasing;
 
-    fillStyle('rgb(1000,0,0)'); //red color background
-    beginPath;
-    roundRect(25, 25, Width - 50, Height - 50, 25); // filling a square 250x250
-    fill;
+    begin//parent red round rectangle
+      fillStyle('rgb(255,0,132)');
+      beginPath;
+      roundRect(25, 25, Width - 50, Height - 50, 25);
+      fill;
+    end;
 
-    clearRect(Width - mx - 25, Height - my - 25, 50, 50); // erase a square
+    begin  // dynamic small square
+      beginPath;
+      rect(Width - mx - 25, Height - my - 25, 77, 77);
+      fillStyle('rgb(132,184,132)');
+      fill;
+    end;
 
-    beginPath;
-    arc(mx, my, 30, 0, 2 * Pi);
-    clearPath;
+    begin //static small arc
+      beginPath;
+      arc(500, 50, 30, 0, 3);
+      fillStyle('rgb(201,168,255)');
+      fill;
+    end;
 
-    strokeStyle('rgb(0,0,1000)'); // contour de couleur bleue
-    strokeRect(100, 100, 20, 20); //outline of a square
+    begin //dynamic small circle
+      beginPath;
+      //arc(mx, my, 30, 0, 2 * Pi);
+      circle(mx, my, 30);
+      fillStyle('rgb(201,168,255)');
+      fill;
+    end;
 
-    shadowOffset := PointF(3, 3);
-    shadowColor('rgba(0,0,0,0.5)');
-    shadowBlur := 4;
+    begin //yellow rectangle with blur
+      beginPath;
+      strokeStyle('rgb(255,255,0)');
+      linewidth := 2;
+      shadowOffset := PointF(3, 3);
+      shadowColor('rgba(0,0,0,0.5)');
+      shadowBlur := 4;
+      strokeRect(100, 100, 70, 30);
+    end;
 
-    beginPath;
-    lineWidth := 3;
-    moveTo(20, 160);
-    lineTo(200, 160);
-    lineStyle([3, 1]);
-    stroke;
+    begin //line 1
+      beginPath;
+      lineWidth := 4;
+      moveTo(20, 160);
+      lineTo(200, 160);
+      lineStyle([3, 1]);
+      stroke;
+    end;
 
-    beginPath;
-    moveTo(20, 180);
-    lineTo(220, 180);
-    lineTo(240, 160);
-    lineStyle([1, 1, 2, 2]);
-    stroke;
+    begin   // line 2
+      beginPath;
+      moveTo(20, 180);
+      lineTo(220, 180);
+      lineTo(240, 160);
+      lineStyle([1, 1, 2, 2]);
+      stroke;
+    end;
   end;
-  drawingArea.surface.PutImage(0, 0, layer, dmDrawWithTransparency);
+  targetCanvas.surface.PutImage(0, 0, layer, dmDrawWithTransparency);
   layer.Free;
-  UpdateIn(10);
+  UpdateIn(glob.UpdateInterval);
 end;
 
-procedure Tform_1.Test3(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test3(targetCanvas: TBGRACanvas2D);
 begin
-  drawingArea.fillStyle('rgb(1000,1000,1000)');
-  drawingArea.fillRect(0, 0, drawingArea.Width, drawingArea.Height);
+  targetCanvas.fillStyle('rgb(1000,1000,1000)');
+  targetCanvas.fillRect(0, 0, targetCanvas.Width, targetCanvas.Height);
   // Solid triangle without border
-  drawingArea.beginPath();
-  drawingArea.moveTo(100, 100);
-  drawingArea.lineTo(150, 30);
-  drawingArea.lineTo(230, 150);
-  drawingArea.closePath();
-  if drawingArea.isPointInPath(mx + 0.5, my + 0.5) then
-    drawingArea.fillStyle('rgb(1000,192,192)')
+  targetCanvas.beginPath();
+  targetCanvas.moveTo(100, 100);
+  targetCanvas.lineTo(150, 30);
+  targetCanvas.lineTo(230, 150);
+  targetCanvas.closePath();
+  if targetCanvas.isPointInPath(mx + 0.5, my + 0.5) then
+    targetCanvas.fillStyle('rgb(1000,192,192)')
   else
-    drawingArea.fillStyle('rgb(1000,0,0)');
-  drawingArea.fill();
+    targetCanvas.fillStyle('rgb(1000,0,0)');
+  targetCanvas.fill();
   //Solid triangle with border
-  drawingArea.fillStyle('rgb(0,1000,0)');
-  drawingArea.strokeStyle('rgb(0,0,1000)');
-  drawingArea.lineWidth := 8;
-  drawingArea.beginPath();
-  drawingArea.moveTo(50, 100);
-  drawingArea.lineTo(50, 220);
-  drawingArea.lineTo(210, 200);
-  drawingArea.closePath();
-  if drawingArea.isPointInPath(mx + 0.5, my + 0.5) then
-    drawingArea.fillStyle('rgb(192,1000,192)')
+  targetCanvas.fillStyle('rgb(0,1000,0)');
+  targetCanvas.strokeStyle('rgb(0,0,1000)');
+  targetCanvas.lineWidth := 8;
+  targetCanvas.beginPath();
+  targetCanvas.moveTo(50, 100);
+  targetCanvas.lineTo(50, 220);
+  targetCanvas.lineTo(210, 200);
+  targetCanvas.closePath();
+  if targetCanvas.isPointInPath(mx + 0.5, my + 0.5) then
+    targetCanvas.fillStyle('rgb(192,1000,192)')
   else
-    drawingArea.fillStyle('rgb(0,1000,0)');
-  drawingArea.fill();
-  drawingArea.stroke();
+    targetCanvas.fillStyle('rgb(0,1000,0)');
+  targetCanvas.fill();
+  targetCanvas.stroke();
   //Solid triangle with border
   UpdateIn(50);
 end;
 
-procedure Tform_1.Test4(drawingArea: TBGRACanvas2D; grainElapse: integer);
+procedure TForm1.Test4(targetCanvas: TBGRACanvas2D; grainElapse: integer);
 var
   angle: single;
   p0, p1, p2: TPointF;
 begin
   Inc(test4pos, grainElapse);
   angle := test4pos * 2 * Pi / 400;
-  drawingArea.translate((drawingArea.Width - 300) / 2, (drawingArea.Height - 300) / 2);
-  drawingArea.skewx(sin(angle));
+  targetCanvas.translate((targetCanvas.Width - 300) / 2,
+    (targetCanvas.Height - 300) / 2);
+  targetCanvas.skewx(sin(angle));
 
-  drawingArea.beginPath;
-  drawingArea.rect(0, 0, 300, 300);
-  drawingArea.fillStyle(CSSYellow);
-  drawingArea.strokeStyle(CSSRed);
-  drawingArea.lineWidth := 5;
-  drawingArea.strokeOverFill;
+  targetCanvas.beginPath;
+  targetCanvas.rect(0, 0, 300, 300);
+  targetCanvas.fillStyle(CSSYellow);
+  targetCanvas.strokeStyle(CSSRed);
+  targetCanvas.lineWidth := 5;
+  targetCanvas.strokeOverFill;
 
-  drawingArea.beginPath();
+  targetCanvas.beginPath();
   // coord. centre 150,150  radius : 50 starting angle 0 end 2Pi
-  drawingArea.arc(150, 150, 50, 0, PI * 2, True); // Cercle
-  drawingArea.moveTo(100, 150); // go to the starting point of the arc
-  drawingArea.arc(100, 100, 50, PI / 2, PI, False); // Arc sens aig. montre
-  drawingArea.moveTo(150, 150); // go to the starting point of the arc
-  drawingArea.arc(200, 150, 50, 2 * PI / 2, 0, False);  // Autre cercle
-  drawingArea.lineWidth := 1;
-  drawingArea.strokeStyle(BGRABlack);
-  drawingArea.stroke();
+  targetCanvas.arc(150, 150, 50, 0, PI * 2, True); // Cercle
+  targetCanvas.moveTo(100, 150); // go to the starting point of the arc
+  targetCanvas.arc(100, 100, 50, PI / 2, PI, False); // Arc sens aig. montre
+  targetCanvas.moveTo(150, 150); // go to the starting point of the arc
+  targetCanvas.arc(200, 150, 50, 2 * PI / 2, 0, False);  // Autre cercle
+  targetCanvas.lineWidth := 1;
+  targetCanvas.strokeStyle(BGRABlack);
+  targetCanvas.stroke();
 
-  drawingArea.lineJoin := 'round';
+  targetCanvas.lineJoin := 'round';
 
   angle := test4pos * 2 * Pi / 180;
   p0 := PointF(150, 50);
   p1 := pointF(150 + 50, 50);
   p2 := pointF(150 + 50 + cos(sin(angle) * Pi / 2) * 40, 50 +
     sin(sin(angle) * Pi / 2) * 40);
-  drawingArea.beginPath;
-  drawingArea.moveTo(p0);
-  drawingArea.arcTo(p1, p2, 30);
-  drawingArea.lineTo(p2);
-  drawingArea.lineWidth := 5;
-  drawingArea.strokeStyle(BGRA(240, 170, 0));
-  drawingArea.stroke();
+  targetCanvas.beginPath;
+  targetCanvas.moveTo(p0);
+  targetCanvas.arcTo(p1, p2, 30);
+  targetCanvas.lineTo(p2);
+  targetCanvas.lineWidth := 5;
+  targetCanvas.strokeStyle(BGRA(240, 170, 0));
+  targetCanvas.stroke();
 
-  drawingArea.beginPath;
-  drawingArea.moveTo(p0);
-  drawingArea.lineTo(p1);
-  drawingArea.lineTo(p2);
-  drawingArea.strokeStyle(BGRA(0, 0, 255));
-  drawingArea.lineWidth := 2;
-  drawingArea.stroke();
+  targetCanvas.beginPath;
+  targetCanvas.moveTo(p0);
+  targetCanvas.lineTo(p1);
+  targetCanvas.lineTo(p2);
+  targetCanvas.strokeStyle(BGRA(0, 0, 255));
+  targetCanvas.lineWidth := 2;
+  targetCanvas.stroke();
 
   UpdateIn(10);
 end;
 
-procedure Tform_1.Test5(drawingArea: TBGRACanvas2D; grainElapse: integer);
+procedure TForm1.Test5(targetCanvas: TBGRACanvas2D; grainElapse: integer);
 var
   svg: TBGRASVG;
 begin
   Inc(test5pos, grainElapse);
 
   svg := TBGRASVG.Create;
-  svg.LoadFromFile(gvars.path_media_s + 'Amsterdammertje-icoon.svg');
-  svg.StretchDraw(drawingArea, taCenter, tlCenter, 0, 0, drawingArea.Width /
-    3, drawingArea.Height);
+  svg.LoadFromFile(glob.path_media_s + 'Amsterdammertje-icoon.svg');
+  svg.StretchDraw(targetCanvas, taCenter, tlCenter, 0, 0, targetCanvas.Width /
+    3, targetCanvas.Height);
 
-  svg.LoadFromFile(gvars.path_media_s + 'BespectacledMaleUser.svg');
-  svg.StretchDraw(drawingArea, drawingArea.Width / 3, 0, drawingArea.Width *
-    2 / 3, drawingArea.Height / 2);
+  svg.LoadFromFile(glob.path_media_s + 'BespectacledMaleUser.svg');
+  svg.StretchDraw(targetCanvas, targetCanvas.Width / 3, 0, targetCanvas.Width *
+    2 / 3, targetCanvas.Height / 2);
 
-  drawingArea.save;
-  drawingArea.beginPath;
-  drawingArea.rect(drawingArea.Width / 3, drawingArea.Height / 2,
-    drawingArea.Width * 2 / 3, drawingArea.Height / 2);
-  drawingArea.clip;
-  svg.LoadFromFile(gvars.path_media_s + 'Blue_gyroelongated_pentagonal_pyramid.svg');
-  svg.Draw(drawingArea, taCenter, tlCenter, drawingArea.Width * 2 /
-    3, drawingArea.Height * 3 / 4);
-  drawingArea.restore;
+  targetCanvas.save;
+  targetCanvas.beginPath;
+  targetCanvas.rect(targetCanvas.Width / 3, targetCanvas.Height / 2,
+    targetCanvas.Width * 2 / 3, targetCanvas.Height / 2);
+  targetCanvas.clip;
+  svg.LoadFromFile(glob.path_media_s + 'Blue_gyroelongated_pentagonal_pyramid.svg');
+  svg.Draw(targetCanvas, taCenter, tlCenter, targetCanvas.Width * 2 /
+    3, targetCanvas.Height * 3 / 4);
+  targetCanvas.restore;
 
   svg.Free;
 
-  drawingArea.beginPath;
-  drawingArea.lineWidth := 1;
-  drawingArea.strokeStyle(BGRABlack);
-  drawingArea.moveTo(drawingArea.Width / 3, 0);
-  drawingArea.lineTo(drawingArea.Width / 3, drawingArea.Height);
-  drawingArea.moveTo(drawingArea.Width / 3, drawingArea.Height / 2);
-  drawingArea.lineTo(drawingArea.Width, drawingArea.Height / 2);
-  drawingArea.stroke;
+  targetCanvas.beginPath;
+  targetCanvas.lineWidth := 1;
+  targetCanvas.strokeStyle(BGRABlack);
+  targetCanvas.moveTo(targetCanvas.Width / 3, 0);
+  targetCanvas.lineTo(targetCanvas.Width / 3, targetCanvas.Height);
+  targetCanvas.moveTo(targetCanvas.Width / 3, targetCanvas.Height / 2);
+  targetCanvas.lineTo(targetCanvas.Width, targetCanvas.Height / 2);
+  targetCanvas.stroke;
 
   UpdateIn(20);
 end;
 
-procedure Tform_1.Test6(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test6(targetCanvas: TBGRACanvas2D);
 begin
-  drawingArea.fillStyle('rgb(1000,1000,1000)');
-  drawingArea.fillRect(0, 0, 300, 300);
-  //Example of Bézier curves
-  drawingArea.fillStyle('yellow');
-  drawingArea.lineWidth := 15;
-  drawingArea.lineCap := 'round'; //round butt square
-  drawingArea.lineJoin := 'miter'; //round miter bevel
-  drawingArea.strokeStyle('rgb(200,200,1000)');
-  drawingArea.beginPath();
-  drawingArea.moveTo(50, 150);
-  drawingArea.bezierCurveTo(50, 80, 100, 60, 130, 60);
-  drawingArea.bezierCurveTo(180, 60, 250, 50, 260, 130);
-  drawingArea.bezierCurveTo(150, 150, 150, 150, 120, 280);
-  drawingArea.bezierCurveTo(50, 250, 100, 200, 50, 150);
-  drawingArea.fill();
-  drawingArea.stroke();
+  targetCanvas.fillStyle('rgb(1000,1000,1000)');
+  targetCanvas.fillRect(0, 0, 300, 300);
+  //Example of B2ézier curves
+  targetCanvas.fillStyle('yellow');
+  targetCanvas.lineWidth := 15;
+  targetCanvas.lineCap := 'round'; //round butt square
+  targetCanvas.lineJoin := 'miter'; //round miter bevel
+  targetCanvas.strokeStyle('rgb(200,200,1000)');
+  targetCanvas.beginPath();
+  targetCanvas.moveTo(50, 150);
+  targetCanvas.bezierCurveTo(50, 80, 100, 60, 130, 60);
+  targetCanvas.bezierCurveTo(180, 60, 250, 50, 260, 130);
+  targetCanvas.bezierCurveTo(150, 150, 150, 150, 120, 280);
+  targetCanvas.bezierCurveTo(50, 250, 100, 200, 50, 150);
+  targetCanvas.fill();
+  targetCanvas.stroke();
 end;
 
-procedure Tform_1.Test7(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test7(targetCanvas: TBGRACanvas2D);
 var
   i: integer;
 begin
-  drawingArea.fillStyle('black');
-  drawingArea.fillRect(0, 0, 300, 300);
+  targetCanvas.fillStyle('black');
+  targetCanvas.fillRect(0, 0, 300, 300);
   // Background drawing
-  drawingArea.fillStyle('red');
-  drawingArea.fillRect(0, 0, 150, 150);
-  drawingArea.fillStyle('blue');
-  drawingArea.fillRect(150, 0, 150, 150);
-  drawingArea.fillStyle('yellow');
-  drawingArea.fillRect(0, 150, 150, 150);
-  drawingArea.fillStyle('green');
-  drawingArea.fillRect(150, 150, 150, 150);
-  drawingArea.fillStyle('#FFF');
+  targetCanvas.fillStyle('red');
+  targetCanvas.fillRect(0, 0, 150, 150);
+  targetCanvas.fillStyle('blue');
+  targetCanvas.fillRect(150, 0, 150, 150);
+  targetCanvas.fillStyle('yellow');
+  targetCanvas.fillRect(0, 150, 150, 150);
+  targetCanvas.fillStyle('green');
+  targetCanvas.fillRect(150, 150, 150, 150);
+  targetCanvas.fillStyle('#FFF');
   //Definition of the transparency value
-  drawingArea.globalAlpha := 0.1;
+  targetCanvas.globalAlpha := 0.1;
   //Drawing of semi-transparent squares
   for i := 0 to 9 do
   begin
-    drawingArea.beginPath();
-    drawingArea.fillRect(10 * i, 10 * i, 300 - 20 * i, 300 - 20 * i);
-    drawingArea.fill();
+    targetCanvas.beginPath();
+    targetCanvas.fillRect(10 * i, 10 * i, 300 - 20 * i, 300 - 20 * i);
+    targetCanvas.fill();
   end;
 end;
 
-procedure Tform_1.Test8(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test8(targetCanvas: TBGRACanvas2D);
 begin
-  drawingArea.drawImage(img, 0, 0);
-  drawingArea.globalAlpha := 0.5;
-  drawingArea.drawImage(img, 100, 100);
-  drawingArea.globalAlpha := 0.9;
-  drawingArea.translate(100, 100);
-  drawingArea.beginPath;
-  drawingArea.moveTo(50, 50);
-  drawingArea.lineTo(300, 50);
-  drawingArea.lineTo(500, 200);
-  drawingArea.lineTo(50, 200);
-  drawingArea.fillStyle(img);
-  drawingArea.fill;
+  targetCanvas.drawImage(img, 0, 0);
+  targetCanvas.globalAlpha := 0.5;
+  targetCanvas.drawImage(img, 100, 100);
+  targetCanvas.globalAlpha := 0.9;
+  targetCanvas.translate(100, 100);
+  targetCanvas.beginPath;
+  targetCanvas.moveTo(50, 50);
+  targetCanvas.lineTo(300, 50);
+  targetCanvas.lineTo(500, 200);
+  targetCanvas.lineTo(50, 200);
+  targetCanvas.fillStyle(img);
+  targetCanvas.fill;
 end;
 
-procedure Tform_1.Test9(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test9(targetCanvas: TBGRACanvas2D);
 var
   i: integer;
   j: integer;
 begin
-  drawingArea.translate(drawingArea.Width / 2 - 15 * 10, drawingArea.Height /
+  targetCanvas.translate(targetCanvas.Width / 2 - 15 * 10, targetCanvas.Height /
     2 - 15 * 10);
-  drawingArea.strokeStyle('#000');
-  drawingArea.lineWidth := 4;
+  targetCanvas.strokeStyle('#000');
+  targetCanvas.lineWidth := 4;
   for i := 0 to 14 do
     for j := 0 to 14 do
     begin
-      drawingArea.fillStyle(BGRA(255 - 18 * i, 255 - 18 * j, 0));
-      drawingArea.strokeStyle(BGRA(20 + 10 * j, 20 + 8 * i, 0));
-      drawingArea.fillRect(j * 20, i * 20, 20, 20);
-      drawingArea.strokeRect(j * 20, i * 20, 20, 20);
+      targetCanvas.fillStyle(BGRA(255 - 18 * i, 255 - 18 * j, 0));
+      targetCanvas.strokeStyle(BGRA(20 + 10 * j, 20 + 8 * i, 0));
+      targetCanvas.fillRect(j * 20, i * 20, 20, 20);
+      targetCanvas.strokeRect(j * 20, i * 20, 20, 20);
     end;
 end;
 
-procedure Tform_1.Test10(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test10(targetCanvas: TBGRACanvas2D);
 var
   i: integer;
   j: integer;
 begin
-  drawingArea.translate(drawingArea.Width / 2, drawingArea.Height / 2);
+  targetCanvas.translate(targetCanvas.Width / 2, targetCanvas.Height / 2);
   //center 0 0 now in central position
   for i := 1 to 9 do
   begin
-    drawingArea.save(); // counterbalanced by a restore
-    drawingArea.fillStyle(BGRA(25 * i, 255 - 25 * i, 255));
+    targetCanvas.save(); // counterbalanced by a restore
+    targetCanvas.fillStyle(BGRA(25 * i, 255 - 25 * i, 255));
     for j := 0 to i * 5 do
     begin
-      drawingArea.rotate(PI * 2 / (1 + i * 5));
-      drawingArea.beginPath();
-      drawingArea.arc(0, i * 16, 6, 0, PI * 2, True);
-      drawingArea.fill();
+      targetCanvas.rotate(PI * 2 / (1 + i * 5));
+      targetCanvas.beginPath();
+      targetCanvas.arc(0, i * 16, 6, 0, PI * 2, True);
+      targetCanvas.fill();
     end;
-    drawingArea.restore();
+    targetCanvas.restore();
   end;
 end;
 
-procedure Tform_1.Test11(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test11(targetCanvas: TBGRACanvas2D);
 const
   sc = 20;  // number of pixels for one unit
 
@@ -728,42 +776,42 @@ var
   end;
 
 begin
-  H := drawingArea.Height;
-  W := drawingArea.Width;
+  H := targetCanvas.Height;
+  W := targetCanvas.Width;
   // grid layout
-  drawingArea.strokeStyle('#666');
-  drawingArea.beginPath();
-  drawingArea.lineWidth := 0.5;
+  targetCanvas.strokeStyle('#666');
+  targetCanvas.beginPath();
+  targetCanvas.lineWidth := 0.5;
   //horizontal lines
   for i := -trunc(H / 2 / sc) to trunc(H / 2 / sc) do
   begin
-    drawingArea.moveTo(0, H / 2 - sc * i);
-    drawingArea.lineTo(W, H / 2 - sc * i);
+    targetCanvas.moveTo(0, H / 2 - sc * i);
+    targetCanvas.lineTo(W, H / 2 - sc * i);
   end;
   // vertical lines
   for i := 0 to trunc(W / sc) do
   begin
-    drawingArea.moveTo(sc * i, H - 0);
-    drawingArea.lineTo(sc * i, H - H);
+    targetCanvas.moveTo(sc * i, H - 0);
+    targetCanvas.lineTo(sc * i, H - H);
   end;
-  drawingArea.stroke();
+  targetCanvas.stroke();
   //function plot
-  drawingArea.strokeStyle('#ff0000');
-  drawingArea.lineWidth := 1.5;
-  drawingArea.beginPath();
+  targetCanvas.strokeStyle('#ff0000');
+  targetCanvas.lineWidth := 1.5;
+  targetCanvas.beginPath();
   x := 0;
   u := f(x);
-  drawingArea.moveTo(0, H / 2 - u * sc);
+  targetCanvas.moveTo(0, H / 2 - u * sc);
   while x < W / sc do
   begin
     u := f(x);
-    drawingArea.lineTo(x * sc, H / 2 - u * sc);
+    targetCanvas.lineTo(x * sc, H / 2 - u * sc);
     x += 1 / sc;
   end;
-  drawingArea.stroke();
+  targetCanvas.stroke();
 end;
 
-procedure Tform_1.Test12(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test12(targetCanvas: TBGRACanvas2D);
 var
   W: longint;
   H: longint;
@@ -784,99 +832,99 @@ var
     x0 := R2 - O;
     y0 := 0;
     i := 1;
-    drawingArea.beginPath();
+    targetCanvas.beginPath();
     x1 := x0;
     y1 := y0;
-    drawingArea.moveTo(x1, y1);
+    targetCanvas.moveTo(x1, y1);
     repeat
       if (i > 1000) then
         break;
       x2 := (R2 + r) * cos(i * PI / 72) - (r + O) * cos(((R2 + r) / r) * (i * PI / 72));
       y2 := (R2 + r) * sin(i * PI / 72) - (r + O) * sin(((R2 + r) / r) * (i * PI / 72));
-      drawingArea.lineTo(x2, y2);
+      targetCanvas.lineTo(x2, y2);
       x1 := x2;
       y1 := y2;
       Inc(i);
     until (abs(x2 - x0) < 1e-6) and (abs(y2 - y0) < 1e-6);
-    drawingArea.stroke();
+    targetCanvas.stroke();
   end;
 
 begin
-  W := drawingArea.Width;
-  H := drawingArea.Height;
-  drawingArea.fillRect(0, 0, W, H);
+  W := targetCanvas.Width;
+  H := targetCanvas.Height;
+  targetCanvas.fillRect(0, 0, W, H);
   for i := 0 to 1 do
     for j := 0 to 2 do
     begin
-      drawingArea.save();
-      drawingArea.strokeStyle(color());
-      drawingArea.translate(110 + j * 200, 100 + i * 160);
+      targetCanvas.save();
+      targetCanvas.strokeStyle(color());
+      targetCanvas.translate(110 + j * 200, 100 + i * 160);
       drawSpirograph(40 * (j + 2) / (j + 1), -(3 + random(11)) * (i + 3) / (i + 1), 35);
-      drawingArea.restore();
+      targetCanvas.restore();
     end;
 
   UpdateIn(3000);
 end;
 
-procedure Tform_1.Test13(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test13(targetCanvas: TBGRACanvas2D);
 const
   vitesse = 1;
 begin
-  drawingArea.fillStyle('#000');
-  drawingArea.fillRect(0, 0, 800, 400);
-  drawingArea.clearRect(0, 0, 800, 400);
-  drawingArea.fillRect(0, 0, 800, 400);
-  drawingArea.setTransform(-0.55, 0.85, -1, 0.10, 100, 50 + img.Width * 0.5);
-  drawingArea.rotate(PI * 2 * (Test13pos / 360) * vitesse);
-  drawingArea.drawImage(img, img.Width * (-0.5) - 200, img.Height * (-0.8));
+  targetCanvas.fillStyle('#000');
+  targetCanvas.fillRect(0, 0, 800, 400);
+  targetCanvas.clearRect(0, 0, 800, 400);
+  targetCanvas.fillRect(0, 0, 800, 400);
+  targetCanvas.setTransform(-0.55, 0.85, -1, 0.10, 100, 50 + img.Width * 0.5);
+  targetCanvas.rotate(PI * 2 * (Test13pos / 360) * vitesse);
+  targetCanvas.drawImage(img, img.Width * (-0.5) - 200, img.Height * (-0.8));
   Test13pos += 1;
   if (Test13pos = 360) then
     Test13pos := 0;
   UpdateIn(10);
 end;
 
-procedure Tform_1.Test14(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test14(targetCanvas: TBGRACanvas2D);
 
   procedure pave();
   begin
-    drawingArea.save();
-    drawingArea.fillStyle('rgb(130,100,800)');
-    drawingArea.strokeStyle('rgb(0,0,300)');
-    drawingArea.beginPath();
-    drawingArea.lineWidth := 2;
-    drawingArea.moveTo(5, 5);
-    drawingArea.lineTo(20, 10);
-    drawingArea.lineTo(55, 5);
-    drawingArea.lineTo(45, 18);
-    drawingArea.lineTo(30, 50);
-    drawingArea.closePath();
-    drawingArea.stroke();
-    drawingArea.fill();
-    drawingArea.fillStyle('rgb(300,300,100)');
-    drawingArea.lineWidth := 5;
-    drawingArea.strokeStyle('rgb(0,300,0)');
-    drawingArea.beginPath();
-    drawingArea.moveTo(20, 18);
-    drawingArea.lineTo(40, 16);
-    drawingArea.lineTo(35, 26);
-    drawingArea.lineTo(25, 30);
-    drawingArea.closePath();
-    drawingArea.stroke();
-    drawingArea.fill();
-    drawingArea.restore();
+    targetCanvas.save();
+    targetCanvas.fillStyle('rgb(130,100,800)');
+    targetCanvas.strokeStyle('rgb(0,0,300)');
+    targetCanvas.beginPath();
+    targetCanvas.lineWidth := 2;
+    targetCanvas.moveTo(5, 5);
+    targetCanvas.lineTo(20, 10);
+    targetCanvas.lineTo(55, 5);
+    targetCanvas.lineTo(45, 18);
+    targetCanvas.lineTo(30, 50);
+    targetCanvas.closePath();
+    targetCanvas.stroke();
+    targetCanvas.fill();
+    targetCanvas.fillStyle('rgb(300,300,100)');
+    targetCanvas.lineWidth := 5;
+    targetCanvas.strokeStyle('rgb(0,300,0)');
+    targetCanvas.beginPath();
+    targetCanvas.moveTo(20, 18);
+    targetCanvas.lineTo(40, 16);
+    targetCanvas.lineTo(35, 26);
+    targetCanvas.lineTo(25, 30);
+    targetCanvas.closePath();
+    targetCanvas.stroke();
+    targetCanvas.fill();
+    targetCanvas.restore();
   end;
   //drawings of a hexagon from six pavers by rotation
   procedure six();
   var
     i: integer;
   begin
-    drawingArea.save();
+    targetCanvas.save();
     for i := 0 to 5 do
     begin
-      drawingArea.rotate(2 * PI / 6);
+      targetCanvas.rotate(2 * PI / 6);
       pave();
     end;
-    drawingArea.restore();
+    targetCanvas.restore();
   end;
   //tiling using translations according to two non-collinear vectors
   // 0,60*Math.sqrt(3)     et     60*3/2, 60*Math.sqrt(3)/2
@@ -885,20 +933,20 @@ procedure Tform_1.Test14(drawingArea: TBGRACanvas2D);
     i: integer;
     j: integer;
   begin
-    drawingArea.fillStyle('rgb(800,100,50)');
-    drawingArea.fillRect(0, 0, drawingArea.Width, drawingArea.Height);
-    for j := 0 to (drawingArea.Width + 60) div 90 do
+    targetCanvas.fillStyle('rgb(800,100,50)');
+    targetCanvas.fillRect(0, 0, targetCanvas.Width, targetCanvas.Height);
+    for j := 0 to (targetCanvas.Width + 60) div 90 do
     begin
-      drawingArea.save();
-      drawingArea.translate(0, (-j div 2) * 60 * sqrt(3));
-      for i := 0 to round(drawingArea.Height / (60 * sqrt(3))) do
+      targetCanvas.save();
+      targetCanvas.translate(0, (-j div 2) * 60 * sqrt(3));
+      for i := 0 to round(targetCanvas.Height / (60 * sqrt(3))) do
       begin
         six();
-        drawingArea.translate(0, 60 * sqrt(3));
+        targetCanvas.translate(0, 60 * sqrt(3));
       end;
 
-      drawingArea.restore();
-      drawingArea.translate(90, sqrt(3) * 60 / 2);
+      targetCanvas.restore();
+      targetCanvas.translate(90, sqrt(3) * 60 / 2);
     end;
   end;
 
@@ -906,22 +954,22 @@ begin
   draw();
 end;
 
-procedure Tform_1.Test15(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test15(targetCanvas: TBGRACanvas2D);
 const
   cote = 190;
 
   procedure pave();
   begin
-    drawingArea.drawImage(abelias, 0, 0);
+    targetCanvas.drawImage(abelias, 0, 0);
   end;
 
   procedure refl();
   begin
-    drawingArea.save();
+    targetCanvas.save();
     pave();
-    drawingArea.transform(1, 0, 0, -1, 0, 0);
+    targetCanvas.transform(1, 0, 0, -1, 0, 0);
     pave();
-    drawingArea.restore();
+    targetCanvas.restore();
   end;
 
   //drawings of a hexagon from six pavers by rotation
@@ -929,13 +977,13 @@ const
   var
     i: integer;
   begin
-    drawingArea.save();
+    targetCanvas.save();
     for i := 0 to 2 do
     begin
-      drawingArea.rotate(4 * PI / 6);
+      targetCanvas.rotate(4 * PI / 6);
       refl();
     end;
-    drawingArea.restore();
+    targetCanvas.restore();
   end;
 
   // tiling using translations according to two non-collinear vectors
@@ -945,20 +993,20 @@ const
     i: integer;
     j: integer;
   begin
-    drawingArea.fillStyle('#330055');
-    drawingArea.fillRect(0, 0, drawingArea.Width, drawingArea.Height);
-    drawingArea.translate(140, 140);
-    for j := 0 to trunc(drawingArea.Width / (cote * 3 / 2)) do
+    targetCanvas.fillStyle('#330055');
+    targetCanvas.fillRect(0, 0, targetCanvas.Width, targetCanvas.Height);
+    targetCanvas.translate(140, 140);
+    for j := 0 to trunc(targetCanvas.Width / (cote * 3 / 2)) do
     begin
-      drawingArea.save();
-      drawingArea.translate(0, -(1 / 2 + j div 2) * cote * sqrt(3));
-      for i := 0 to trunc(drawingArea.Height / (cote * sqrt(3))) + 1 do
+      targetCanvas.save();
+      targetCanvas.translate(0, -(1 / 2 + j div 2) * cote * sqrt(3));
+      for i := 0 to trunc(targetCanvas.Height / (cote * sqrt(3))) + 1 do
       begin
         trois();
-        drawingArea.translate(0, cote * sqrt(3));
+        targetCanvas.translate(0, cote * sqrt(3));
       end;
-      drawingArea.restore();
-      drawingArea.translate(cote * 3 / 2, sqrt(3) * cote / 2);
+      targetCanvas.restore();
+      targetCanvas.translate(cote * 3 / 2, sqrt(3) * cote / 2);
     end;
   end;
 
@@ -966,19 +1014,19 @@ begin
   draw();
 end;
 
-procedure Tform_1.Test16(drawingArea: TBGRACanvas2D; grainElapse: integer);
+procedure TForm1.Test16(targetCanvas: TBGRACanvas2D; grainElapse: integer);
 var
-  center: TPointF;
+  center16: TPointF;
   angle, zoom: single;
 begin
   Inc(test16pos, grainElapse);
-  center := pointf(drawingArea.Width / 2, drawingArea.Height / 2);
+  center16 := pointf(targetCanvas.Width / 2, targetCanvas.Height / 2);
   angle := test16pos * 2 * Pi / 300;
   zoom := (sin(test16pos * 2 * Pi / 400) + 1.1) *
-    min(drawingArea.Width, drawingArea.Height) / 300;
-  with drawingArea do
+    min(targetCanvas.Width, targetCanvas.Height) / 300;
+  with targetCanvas do
   begin
-    translate(center.X, center.Y);
+    translate(center16.X, center16.Y);
     scale(zoom, zoom);
     rotate(angle);
     translate(-93, -83);
@@ -1061,7 +1109,7 @@ begin
   UpdateIn(10);
 end;
 
-procedure Tform_1.Test17(drawingArea: TBGRACanvas2D; grainElapse: integer);
+procedure TForm1.Test17(targetCanvas: TBGRACanvas2D; grainElapse: integer);
 var
   grad: IBGRACanvasGradient2D;
   angle: single;
@@ -1069,155 +1117,156 @@ begin
   Inc(test17pos, grainElapse);
   angle := test17pos * 2 * Pi / 1000;
 
-  drawingArea.translate(drawingArea.Width / 2, drawingArea.Height / 2);
-  drawingArea.scale(min(drawingArea.Width, drawingArea.Height) / 2 - 10);
-  drawingArea.rotate(angle);
+  targetCanvas.translate(targetCanvas.Width / 2, targetCanvas.Height / 2);
+  targetCanvas.scale(min(targetCanvas.Width, targetCanvas.Height) / 2 - 10);
+  targetCanvas.rotate(angle);
 
-  grad := drawingArea.createLinearGradient(-1, -1, 1, 1);
+  grad := targetCanvas.createLinearGradient(-1, -1, 1, 1);
   grad.addColorStop(0.3, '#ff0000');
   grad.addColorStop(0.6, '#0000ff');
-  drawingArea.fillStyle(grad);
+  targetCanvas.fillStyle(grad);
 
-  grad := drawingArea.createLinearGradient(-1, -1, 1, 1);
+  grad := targetCanvas.createLinearGradient(-1, -1, 1, 1);
   grad.addColorStop(0.3, '#ffffff');
   grad.addColorStop(0.6, '#000000');
-  drawingArea.strokeStyle(grad);
-  drawingArea.lineWidth := 5;
+  targetCanvas.strokeStyle(grad);
+  targetCanvas.lineWidth := 5;
 
-  drawingArea.beginPath;
-  drawingArea.moveto(0, 0);
-  drawingArea.arc(0, 0, 1, Pi / 6, -Pi / 6, False);
-  drawingArea.fill();
-  drawingArea.stroke();
+  targetCanvas.beginPath;
+  targetCanvas.moveto(0, 0);
+  targetCanvas.arc(0, 0, 1, Pi / 6, -Pi / 6, False);
+  targetCanvas.fill();
+  targetCanvas.stroke();
 
   UpdateIn(10);
 end;
 
-procedure Tform_1.Test18(drawingArea: TBGRACanvas2D; grainElapse: integer);
+procedure TForm1.Test18(targetCanvas: TBGRACanvas2D; grainElapse: integer);
 var
   pat: TBGRABitmap;
 begin
   Inc(test18pos, grainElapse);
-  drawingArea.translate(drawingArea.Width div 2, drawingArea.Height div 2);
-  drawingArea.rotate(test18pos * 2 * Pi / 360);
-  drawingArea.scale(3, 3);
+  targetCanvas.translate(targetCanvas.Width div 2, targetCanvas.Height div 2);
+  targetCanvas.rotate(test18pos * 2 * Pi / 360);
+  targetCanvas.scale(3, 3);
   pat := TBGRABitmap.Create(8, 8);
   pat.GradientFill(0, 0, 8, 8, BGRABlack, BGRAWhite, gtLinear,
     PointF(0, 0), PointF(8, 8), dmSet);
-  //  drawingArea.surface.CreateBrushTexture(bsDiagCross,BGRA(255,255,0),BGRA(255,0,0)) as TBGRABitmap;
-  drawingArea.fillStyle(drawingArea.createPattern(pat, 'repeat-x'));
-  drawingArea.fillRect(0, 0, drawingArea.Width, pat.Height - 1);
-  drawingArea.fillStyle(drawingArea.createPattern(pat, 'repeat-y'));
-  drawingArea.fillRect(0, 0, pat.Width - 1, drawingArea.Height);
+  //  targetCanvas.surface.CreateBrushTexture(bsDiagCross,BGRA(255,255,0),BGRA(255,0,0)) as TBGRABitmap;
+  targetCanvas.fillStyle(targetCanvas.createPattern(pat, 'repeat-x'));
+  targetCanvas.fillRect(0, 0, targetCanvas.Width, pat.Height - 1);
+  targetCanvas.fillStyle(targetCanvas.createPattern(pat, 'repeat-y'));
+  targetCanvas.fillRect(0, 0, pat.Width - 1, targetCanvas.Height);
 
-  drawingArea.rotate(Pi);
-  drawingArea.globalAlpha := 0.25;
-  drawingArea.fillStyle(drawingArea.createPattern(pat, 'repeat-x'));
-  drawingArea.fillRect(0, 0, drawingArea.Width, drawingArea.Height);
-  drawingArea.fillStyle(drawingArea.createPattern(pat, 'repeat-y'));
-  drawingArea.fillRect(0, 0, drawingArea.Width, drawingArea.Height);
+  targetCanvas.rotate(Pi);
+  targetCanvas.globalAlpha := 0.25;
+  targetCanvas.fillStyle(targetCanvas.createPattern(pat, 'repeat-x'));
+  targetCanvas.fillRect(0, 0, targetCanvas.Width, targetCanvas.Height);
+  targetCanvas.fillStyle(targetCanvas.createPattern(pat, 'repeat-y'));
+  targetCanvas.fillRect(0, 0, targetCanvas.Width, targetCanvas.Height);
   pat.Free;
 
   UpdateIn(10);
 end;
 
-procedure Tform_1.Test19(drawingArea: TBGRACanvas2D; grainElapse: integer);
+procedure TForm1.Test19(targetCanvas: TBGRACanvas2D; grainElapse: integer);
 var
   i: integer;
   tx, ty: single;
 begin
   Inc(test19pos, grainElapse);
-  drawingArea.save;
-  drawingArea.translate(drawingArea.Width div 2, drawingArea.Height div 2);
-  drawingArea.rotate(test19pos * 2 * Pi / 500);
-  drawingArea.scale(drawingArea.Height / 2, drawingArea.Height / 2);
-  drawingArea.beginPath;
-  drawingArea.moveto(1, 0);
+  targetCanvas.save;
+  targetCanvas.translate(targetCanvas.Width div 2, targetCanvas.Height div 2);
+  targetCanvas.rotate(test19pos * 2 * Pi / 500);
+  targetCanvas.scale(targetCanvas.Height / 2, targetCanvas.Height / 2);
+  targetCanvas.beginPath;
+  targetCanvas.moveto(1, 0);
   for i := 1 to 8 do
   begin
-    drawingArea.rotate(2 * Pi / 8);
-    drawingArea.lineto(1, 0);
+    targetCanvas.rotate(2 * Pi / 8);
+    targetCanvas.lineto(1, 0);
   end;
-  drawingArea.restore;
-  drawingArea.clip;
+  targetCanvas.restore;
+  targetCanvas.clip;
 
-  tx := drawingArea.Width div 2;
-  ty := drawingArea.Height div 2;
-  drawingArea.fillStyle('red');
-  drawingArea.fillRect(0, 0, tx, ty);
-  drawingArea.fillStyle('blue');
-  drawingArea.fillRect(tx, 0, tx, ty);
+  tx := targetCanvas.Width div 2;
+  ty := targetCanvas.Height div 2;
+  targetCanvas.fillStyle('red');
+  targetCanvas.fillRect(0, 0, tx, ty);
+  targetCanvas.fillStyle('blue');
+  targetCanvas.fillRect(tx, 0, tx, ty);
 
-  drawingArea.globalAlpha := 0.75;
-  drawingArea.fillStyle('yellow');
-  drawingArea.fillRect(0, ty, tx, ty);
-  drawingArea.fillStyle('green');
-  drawingArea.fillRect(tx, ty, tx, ty);
+  targetCanvas.globalAlpha := 0.75;
+  targetCanvas.fillStyle('yellow');
+  targetCanvas.fillRect(0, ty, tx, ty);
+  targetCanvas.fillStyle('green');
+  targetCanvas.fillRect(tx, ty, tx, ty);
 
-  test18(drawingArea, grainElapse);
+  test18(targetCanvas, grainElapse);
 end;
 
-procedure Tform_1.Test20(drawingArea: TBGRACanvas2D; AVectorizedFont: boolean);
+procedure TForm1.Test20(targetCanvas: TBGRACanvas2D; AVectorizedFont: boolean);
 var
   i: integer;
   grad: IBGRACanvasGradient2D;
 begin
-  UseVectorizedFont(drawingArea, AVectorizedFont);
-  drawingArea.save;
+  UseVectorizedFont(targetCanvas, AVectorizedFont);
+  targetCanvas.save;
 
-  drawingArea.fontName := 'default';
-  drawingArea.fontEmHeight := drawingArea.Height / 10;
-  drawingArea.textBaseline := 'alphabetic';
+  targetCanvas.fontName := 'default';
+  targetCanvas.fontEmHeight := targetCanvas.Height / 10;
+  targetCanvas.textBaseline := 'alphabetic';
 
-  drawingArea.beginPath;
+  targetCanvas.beginPath;
   if AVectorizedFont then
-    drawingArea.Text('Vectorized font', drawingArea.fontEmHeight *
-      0.2, drawingArea.fontEmHeight)
+    targetCanvas.Text('Vectorized font', targetCanvas.fontEmHeight *
+      0.2, targetCanvas.fontEmHeight)
   else
-    drawingArea.Text('Raster font', drawingArea.fontEmHeight * 0.2,
-      drawingArea.fontEmHeight);
-  drawingArea.lineWidth := 2;
-  drawingArea.strokeStyle(clLime);
-  drawingArea.fillStyle(clBlack);
-  drawingArea.fillOverStroke;
+    targetCanvas.Text('Raster font', targetCanvas.fontEmHeight * 0.2,
+      targetCanvas.fontEmHeight);
+  targetCanvas.lineWidth := 2;
+  targetCanvas.strokeStyle(clLime);
+  targetCanvas.fillStyle(clBlack);
+  targetCanvas.fillOverStroke;
 
-  grad := drawingArea.createLinearGradient(0, 0, drawingArea.Width, drawingArea.Height);
+  grad := targetCanvas.createLinearGradient(0, 0, targetCanvas.Width,
+    targetCanvas.Height);
   grad.addColorStop(0.3, '#000080');
   grad.addColorStop(0.7, '#00a0a0');
-  drawingArea.fillStyle(grad);
+  targetCanvas.fillStyle(grad);
 
-  drawingArea.translate(drawingArea.Width / 2, drawingArea.Height / 2);
+  targetCanvas.translate(targetCanvas.Width / 2, targetCanvas.Height / 2);
 
   for i := 0 to 11 do
   begin
-    drawingArea.beginPath;
-    drawingArea.moveTo(0, 0);
-    drawingArea.lineTo(drawingArea.Width + drawingArea.Height, 0);
-    drawingArea.strokeStyle(clRed);
-    drawingArea.lineWidth := 1;
-    drawingArea.stroke;
+    targetCanvas.beginPath;
+    targetCanvas.moveTo(0, 0);
+    targetCanvas.lineTo(targetCanvas.Width + targetCanvas.Height, 0);
+    targetCanvas.strokeStyle(clRed);
+    targetCanvas.lineWidth := 1;
+    targetCanvas.stroke;
 
-    drawingArea.beginPath;
-    drawingArea.Text('hello', drawingArea.Width / 10, 0);
-    drawingArea.fill;
-    drawingArea.rotate(Pi / 6);
+    targetCanvas.beginPath;
+    targetCanvas.Text('hello', targetCanvas.Width / 10, 0);
+    targetCanvas.fill;
+    targetCanvas.rotate(Pi / 6);
   end;
-  drawingArea.restore;
-  drawingArea.fontRenderer := nil;
+  targetCanvas.restore;
+  targetCanvas.fontRenderer := nil;
 end;
 
-procedure Tform_1.Test22(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test22(targetCanvas: TBGRACanvas2D);
 var
   layer: TBGRABitmap;
 begin
-  layer := TBGRABitmap.Create(drawingArea.Width, drawingArea.Height, CSSRed);
+  layer := TBGRABitmap.Create(targetCanvas.Width, targetCanvas.Height, CSSRed);
   with layer.Canvas2D do
   begin
-    pixelCenteredCoordinates := drawingArea.pixelCenteredCoordinates;
-    antialiasing := drawingArea.antialiasing;
+    pixelCenteredCoordinates := targetCanvas.pixelCenteredCoordinates;
+    antialiasing := targetCanvas.antialiasing;
     fontName := 'default';
     fontStyle := [fsBold];
-    fontEmHeight := min(drawingArea.Height / 2, drawingArea.Width / 4);
+    fontEmHeight := min(targetCanvas.Height / 2, targetCanvas.Width / 4);
     textBaseline := 'middle';
     textAlign := 'center';
 
@@ -1225,15 +1274,15 @@ begin
     Text('hole', Width / 2, Height / 2);
     clearPath;
   end;
-  drawingArea.surface.DrawCheckers(rect(0, 0, drawingArea.Width, drawingArea.Height),
+  targetCanvas.surface.DrawCheckers(rect(0, 0, targetCanvas.Width, targetCanvas.Height),
     CSSWhite, CSSSilver);
-  drawingArea.surface.PutImage(0, 0, layer, dmDrawWithTransparency);
+  targetCanvas.surface.PutImage(0, 0, layer, dmDrawWithTransparency);
 end;
 
-procedure Tform_1.Test23(drawingArea: TBGRACanvas2D; grainElapse: integer);
+procedure TForm1.Test23(targetCanvas: TBGRACanvas2D; grainElapse: integer);
 begin
-  UseVectorizedFont(drawingArea, True);
-  with drawingArea do
+  UseVectorizedFont(targetCanvas, True);
+  with targetCanvas do
   begin
     save;
     fontName := 'default';
@@ -1254,94 +1303,181 @@ begin
   UpdateIn(10);
 end;
 
-procedure Tform_1.Test24(drawingArea: TBGRACanvas2D);
+procedure TForm1.Test24(targetCanvas: TBGRACanvas2D);
 var
-  colors: TBGRACustomGradient;
-  {rationalbezier}Center: TPoint;  f: TBGRACanvas2D; R, boundsF: TrectF;
-  Aleft, Aright : TRationalQuadraticBezierCurve; precision: single;
-  B, B2: TRationalQuadraticBezierCurve; {/rationalbezier}
+  me: string;
+
 begin
-  B:=BezierCurve(PointF(150,180), PointF(0,0), PointF(150,80), 2.0);
-  B2:=BezierCurve(PointF(150,180), PointF(0,0), PointF(150,80), -2.0);
+  me := 'Test24[' + val.ts(counter1) + ']: ';
+  //glob.toMemo(me+'Started ');
+  counter1 := counter1 + 1;
+
   if (mx < 0) or (my < 0) then
   begin
-    mx := drawingArea.Width div 2;
-    my := drawingArea.Height div 2;
+    mx := 0;// targetCanvas.Width div 2;
+    my := 0;//targetCanvas.Height div 2;
   end;
-  drawingArea.fillStyle('rgb(61,112,150)');
-  drawingArea.fillRect(0, 0, drawingArea.Width, drawingArea.Height);
 
+  //set background
+  targetCanvas.fillStyle('rgb(255,255,255)');
+  targetCanvas.fillRect(0, 0, targetCanvas.Width, targetCanvas.Height);
+  CenterOfDrawing := Point(targetCanvas.Width div 2,
+    (targetCanvas.Height - self.Pnl_1.Height - self.Memo_dbg.Height) div
+    2 + self.Pnl_1.Height + self.Memo_dbg.Height);
 
-  {rationalbezier}
-   precision := 0.40;//FloatSpinEdit2.Value;
-  //Img.SetSize(ClientWidth,ClientHeight-Panel1.Height);
-  //Img.Fill(clWhite);
-  //f := Img.Canvas2D;
-  Center := Point(ClientWidth div 2, ClientWidth div 2);
-  boundsF := RectF(0,0, Img.Width,Img.Height);
-  boundsF.Offset(-Center.X, -Center.Y);
-  f := Img.Canvas2D;
-  f.resetTransform;
-  f.translate(Center.X,Center.Y);
-  f.lineJoinLCL:= pjsBevel;
-  // arc d'ellipse en rouge, poids 0.4 (petit arc)
-  drawingArea.beginPath;
-  drawingArea.moveto(B.p1);
-  drawingArea.lineTo(B.c);
-  drawingArea.lineTo(B.p2);
-  drawingArea.moveto(B2.p1);
-  drawingArea.lineTo(B2.c);
-  drawingArea.lineTo(B2.p2);
-  drawingArea.moveto(B.p1.x+5,B.p1.y);
-  drawingArea.circle(B.p1.x,B.p1.y,5);
-  drawingArea.moveto(B.c.x+5,B.c.y);
-  drawingArea.circle(B.c.x,B.c.y,5);
-  drawingArea.moveto(B.p2.x+5,B.p2.y);
-  drawingArea.circle(B.p2.x,B.p2.y,5);
-  drawingArea.strokeStyle(clblack);
-  drawingArea.linewidth := 1;
-  drawingArea.stroke();
-  drawingArea.beginPath;
-  drawingArea.lineWidth := 4;
-  drawingArea.strokeStyle(BGRA(255,0,96,255));
-  drawingArea.moveTo(B.p1);
-  drawingArea.polylineTo(B.ToPoints(boundsF,precision));
-  drawingArea.stroke();
-  // arc d'ellipse en vert, poids -0.4 (grand arc, complétant le précédent)
-  drawingArea.beginPath;
-  drawingArea.strokeStyle(BGRA(96,160,0,255));
-  drawingArea.polylineTo(B2.ToPoints(boundsF,precision));
-  drawingArea.stroke();
-  // arc d'ellipse en vert, poids -0.4 (grand arc, complétant le précédent)
- drawingArea.beginPath;
- drawingArea.strokeStyle(BGRA(96,160,0,255));
- drawingArea.polylineTo(B2.ToPoints(boundsF,precision));
- drawingArea.stroke();
-  if not B2.IsInfinite then
+  //unknown directives
+  bounds := RectF(0, 0, targetCanvas.Width, targetCanvas.Height);
+  bounds.Offset(-CenterOfDrawing.X, -CenterOfDrawing.Y);
+  targetCanvas.resetTransform;
+  targetCanvas.translate(CenterOfDrawing.X, CenterOfDrawing.Y);
+  //targetCanvas.lineJoinLCL := pjsBevel;
+
+  //BezierCurve
+  //toMemo(me+'beziersDefined is: '+val.ts(beziersDefined));
+  if not beziersDefined then
+  begin
+    weight := 2;
+    B1 := BezierCurve(PointF(-150, 80), PointF(0, 0), PointF(150, 80), -weight);
+    B2 := BezierCurve(B1.p1, B1.c, B1.p2, weight);
+    beziersDefined := True;
+  end;
+
+  precision := 0.5;
+  begin // visualize BezierCurve B1 (with complementary curve) in green
+    targetCanvas.beginPath;
+    targetCanvas.strokeStyle(BGRA(96, 160, 0, 255));
+    targetCanvas.polylineTo(B1.ToPoints(bounds, precision));
+    targetCanvas.linewidth := 4;
+    targetCanvas.stroke();
+  end;
+
+  begin // visualize BezierCurve B2 in red, completes the compl part of green B1
+    targetCanvas.beginPath;
+    targetCanvas.lineWidth := 4;
+    targetCanvas.strokeStyle(BGRA(255, 0, 96, 255));
+    targetCanvas.moveTo(B2.p1);// Moves to a loc., disconn. from prev. points
+    targetCanvas.polylineTo(B2.ToPoints(bounds, precision));
+    targetCanvas.stroke();
+  end;
+
+  begin // control circles visual connection lines
+    targetCanvas.beginPath;
+    targetCanvas.moveto(B2.p1);
+    targetCanvas.lineTo(B2.c);
+    targetCanvas.lineTo(B2.p2);
+    targetCanvas.moveto(B1.p1);
+    targetCanvas.lineTo(B1.c);
+    targetCanvas.lineTo(B1.p2);
+    targetCanvas.moveto(B2.p1.x + 5, B2.p1.y);
+    targetCanvas.strokeStyle(BGRA(0, 0, 0, 190));
+    targetCanvas.linewidth := 1.5;
+    targetCanvas.stroke();
+  end;
+
+  begin // control circles
+    targetCanvas.beginPath;
+    targetCanvas.circle(B2.p1.x, B2.p1.y, ControlCircleRadius);
+    targetCanvas.moveto(B2.c.x + 5, B2.c.y);
+    targetCanvas.circle(B2.c.x, B2.c.y, ControlCircleRadius);
+    targetCanvas.moveto(B2.p2.x + 5, B2.p2.y);
+    targetCanvas.circle(B2.p2.x, B2.p2.y, ControlCircleRadius);
+    targetCanvas.strokeStyle(BGRA(0, 0, 0, 190));
+    targetCanvas.linewidth := 1.5;
+    targetCanvas.stroke();
+  end;
+
+  if (mouseBtnCurrent = 'left') and (ControlDetected = '') then
+  begin
+    glob.toMemo(me + 'Detecting control under cursor');
+    CenterOfDrawing := Point(targetCanvas.Width div 2,
+      (targetCanvas.Height - self.Pnl_1.Height - self.Memo_dbg.Height) div
+      2 + self.Pnl_1.Height + self.Memo_dbg.Height);
+    relX := mx - CenterOfDrawing.X;
+    relY := my - CenterOfDrawing.Y;
+    //toMemo(' absolute coordinates (x;y): ' + val.ts(mx) + '; ' + val.ts(my));
+    //toMemo(' relative coordinates (x;y): ' + val.ts(relX) + '; ' + val.ts(relY));
+    minimalDistance := sqr(15);
+    if sqr(B2.p1.x - relX) + sqr(B2.p1.y - relY) < minimalDistance then
     begin
-      // arc en bleu, c'est la deuxième moitié de l'arc en vert
-      B2.Split(Aleft, Aright);
-      drawingArea.strokeStyle(BGRA(0,96,255,255));
-      drawingArea.beginPath;
-      drawingArea.moveTo(Aright.p1);
-      drawingArea.polylineTo(Aright.ToPoints(boundsF,precision*2));
-      drawingArea.stroke;
+      ControlDetected := 'B2.p1';
+      PrevMousePos := Point(relX, relY);
+      glob.toMemo(me + '  - ControlDetected is: ' + ControlDetected);
+    end
+    else if sqr(B2.c.x - relX) + sqr(B2.c.y - relY) < minimalDistance then
+    begin
+      ControlDetected := 'B2.c';
+      PrevMousePos := Point(relX, relY);
+      glob.toMemo(me + '  - ControlDetected is: ' + ControlDetected);
+    end
+    else if sqr(B2.p2.x - relX) + sqr(B2.p2.y - relY) < minimalDistance then
+    begin
+      ControlDetected := 'B2.p2';
+      PrevMousePos := Point(relX, relY);
+      glob.toMemo(me + '  - ControlDetected is: ' + ControlDetected);
+    end
+    else
+      glob.toMemo(me + ' - no Controls detected ');
 
-      // bounding box de l'arc en vert
-      R:=B2.GetBounds();
-      drawingArea.beginPath;
-      drawingArea.rect(round(R.Left)-1, round(R.Top)-1, round(R.Width)+2, round(R.Height)+2);
-      drawingArea.strokeStyle(BGRABlack);
-      drawingArea.lineWidth := 1;
-      drawingArea.stroke();
+  end; // detecting control
+
+  //Moving control
+  if (mouseBtnCurrent = 'left') and (ControlDetected <> '') then
+  begin
+    glob.toMemo(me + 'Moving control ' + ControlDetected);
+    CenterOfDrawing := Point(targetCanvas.Width div 2,
+      (targetCanvas.Height - self.Pnl_1.Height - self.Memo_dbg.Height) div
+      2 + self.Pnl_1.Height + self.Memo_dbg.Height);
+    relX := mx - CenterOfDrawing.X;
+    relY := my - CenterOfDrawing.Y;
+    d := PointF(relX - PrevMousePos.X, relY - PrevMousePos.Y);
+    glob.toMemo(me + '; d= ' + val.ts(d) + '; relX: ' + val.ts(relX) +
+      '; relY:' + val.ts(relY));
+    if ControlDetected = 'B2.p1' then
+    begin
+      glob.toMemo(me + '   - moving ' + ControlDetected);
+      glob.toMemo(me + '   - old ' + ControlDetected + val.ts(B1.p1) +
+        '; ' + val.ts(B2.p1));
+      B1.p1 += d;
+      B2.p1 += d;
+      glob.toMemo(me + '   - new ' + ControlDetected + ': ' +
+        val.ts(B1.p1) + '; ' + val.ts(B2.p1));
     end;
-    Img.draw(Canvas,0,50);
-  {/rationalbezier}
+    if ControlDetected = 'B2.c' then
+    begin
+      glob.toMemo(me + '   - moving ' + ControlDetected);
+      glob.toMemo(me + '   - old ' + ControlDetected + ': ' +
+        val.ts(B1.c) + '; ' + val.ts(B2.c));
+      B1.c += d;
+      B2.c += d;
+      glob.toMemo(me + '   - new ' + ControlDetected + ': ' +
+        val.ts(B1.c) + '; ' + val.ts(B2.c));
+    end;
+    if ControlDetected = 'B2.p2' then
+    begin
+      glob.toMemo(me + '   - moving ' + ControlDetected);
+      glob.toMemo(me + '   - old ' + ControlDetected + ': ' +
+        val.ts(B1.p2) + '; ' + val.ts(B2.p2));
+      B1.p2 += d;
+      B2.p2 += d;
+      glob.toMemo(me + '   - new ' + ControlDetected + ': ' +
+        val.ts(B1.p2) + '; ' + val.ts(B2.p2));
+    end;
+    PrevMousePos := Point(relX, relY);
+    glob.toMemo(me + 'Moving control end');
+  end; //Moving control
 
+  //mouse up
+  if (mouseBtnCurrent = '') and (ControlDetected <> '') then
+  begin
+    glob.toMemo(me + 'Mouse up. Reseting ControlDetected');
+    ControlDetected := '';
+  end;
 
-end;
+  //glob.toMemo(me+'Finished');
+  UpdateIn(glob.UpdateInterval);
+end; //Test24
 
-
+initialization
 
 
 end.
