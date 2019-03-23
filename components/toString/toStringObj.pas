@@ -1,12 +1,12 @@
 unit toStringObj;
 
-{$mode objfpc}{$H+}
+{$mode objfpc}
 
 interface
 
 uses
   classes, sysutils,
-  Forms{TCloseAction},LCLType{HWND}, BGRABitmapTypes;
+  Forms{TCloseAction},LCLType{HWND}, BGRABitmapTypes{TPointF};
 
 type Type_toStringObj = class
 
@@ -25,6 +25,7 @@ end;
 
 
 implementation
+
 
 function Type_toStringObj.ts(inVar: Integer): string;
 begin exit(intToStr(inVar)); end;
@@ -55,5 +56,3 @@ begin exit(FloatToStr(inVar) ); end;
 
 
 end.
-
-
